@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@thesistrack.com"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -81,12 +81,6 @@ export default function AdminLoginPage() {
 
           <div className={styles.backLink}>
             <Link to="/login">← Back to User Login</Link>
-          </div>
-
-          <div className={styles.demoCredentials}>
-            <p className={styles.demoTitle}>Demo Credentials:</p>
-            <p>Email: admin@thesistrack.com</p>
-            <p>Password: admin123</p>
           </div>
         </CardContent>
       </Card>
