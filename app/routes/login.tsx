@@ -8,6 +8,27 @@ import { getCurrentUser } from "~/lib/auth";
 import { APP_CONFIG } from "~/config";
 import styles from "./login.module.css";
 
+// Helper function to fetch with timeout
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number = 20000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout - please try again');
+    }
+    throw error;
+  }
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -38,11 +59,11 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch("/api/auth/request-otp", {
+      const response = await fetchWithTimeout("/api/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ email }),
-      });
+      }, 20000); // 20 second timeout
 
       const data = await response.json();
 
@@ -56,7 +77,11 @@ export default function LoginPage() {
         setError(data.error || "Failed to send OTP");
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Network error. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -74,11 +99,11 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch("/api/auth/verify-otp", {
+      const response = await fetchWithTimeout("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ email, otp }),
-      });
+      }, 20000); // 20 second timeout
 
       const data = await response.json();
 
@@ -89,7 +114,11 @@ export default function LoginPage() {
         setError(data.error || "Invalid OTP. Please try again.");
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Network error. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

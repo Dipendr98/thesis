@@ -9,13 +9,23 @@ export function makeTransporter() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    // Add timeout configuration to prevent hanging
+    connectionTimeout: 10000, // 10 seconds to establish connection
+    greetingTimeout: 5000,    // 5 seconds for server greeting
+    socketTimeout: 10000,     // 10 seconds for socket inactivity
   });
 }
 
 export async function sendOtpEmail(to: string, otp: string, ttlMin: number = 10) {
   const transporter = makeTransporter();
 
-  await transporter.sendMail({
+  // Create a timeout promise that rejects after 15 seconds
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Email sending timeout after 15 seconds')), 15000);
+  });
+
+  // Race between sending email and timeout
+  const sendMailPromise = transporter.sendMail({
     from: `"ThesisTrack" <${process.env.SMTP_USER}>`,
     to,
     subject: "Your ThesisTrack Login OTP",
@@ -32,4 +42,7 @@ export async function sendOtpEmail(to: string, otp: string, ttlMin: number = 10)
       </div>
     `,
   });
+
+  // Wait for either email to send or timeout
+  await Promise.race([sendMailPromise, timeoutPromise]);
 }
