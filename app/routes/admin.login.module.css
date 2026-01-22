@@ -1,0 +1,99 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-accent-2) 0%, var(--color-neutral-2) 100%);
+  padding: var(--space-4);
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-5);
+  font-weight: 700;
+  color: var(--color-accent-9);
+  margin-bottom: var(--space-4);
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+}
+
+.title {
+  font-size: var(--font-size-6);
+  font-weight: 600;
+  color: var(--color-neutral-12);
+  margin-bottom: var(--space-2);
+}
+
+.subtitle {
+  font-size: var(--font-size-2);
+  color: var(--color-neutral-11);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.formGroup label {
+  font-size: var(--font-size-2);
+  font-weight: 500;
+  color: var(--color-neutral-12);
+}
+
+.error {
+  font-size: var(--font-size-1);
+  color: var(--color-error-9);
+  margin-top: var(--space-1);
+}
+
+.backLink {
+  margin-top: var(--space-4);
+  text-align: center;
+}
+
+.backLink a {
+  font-size: var(--font-size-2);
+  color: var(--color-accent-9);
+  text-decoration: none;
+}
+
+.backLink a:hover {
+  text-decoration: underline;
+}
+
+.demoCredentials {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-neutral-3);
+  border-radius: var(--radius-2);
+  font-size: var(--font-size-1);
+  color: var(--color-neutral-11);
+}
+
+.demoTitle {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  color: var(--color-neutral-12);
+}

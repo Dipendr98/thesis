@@ -1,0 +1,74 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--space-9) var(--space-5);
+}
+
+.title {
+  font: var(--font-display);
+  color: var(--color-neutral-12);
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.subtitle {
+  font: var(--font-subheading);
+  color: var(--color-neutral-11);
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.contactCard {
+  text-align: center;
+  padding: var(--space-6);
+}
+
+.contactIcon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--space-4);
+  color: var(--color-accent-9);
+}
+
+.contactCard h3 {
+  font: var(--font-subheading);
+  color: var(--color-neutral-12);
+  margin-bottom: var(--space-3);
+}
+
+.contactCard p {
+  color: var(--color-neutral-11);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.formGroup label {
+  font-weight: 500;
+  color: var(--color-neutral-12);
+}
+
+.success {
+  background: var(--color-success-3);
+  border: 1px solid var(--color-success-6);
+  color: var(--color-success-11);
+  padding: var(--space-4);
+  border-radius: var(--radius-3);
+  text-align: center;
+}
