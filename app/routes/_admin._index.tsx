@@ -112,8 +112,8 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
                   <div key={order.id} className={styles.orderCard}>
                     <div className={styles.orderHeader}>
                       <div className={styles.orderInfo}>
-                        <h3 className={styles.orderCustomer}>{order.customer_name}</h3>
-                        <p className={styles.orderEmail}>{order.customer_email}</p>
+                        <h3 className={styles.orderCustomer}>{order.topic}</h3>
+                        <p className={styles.orderEmail}>{order.domain} - {order.type}</p>
                       </div>
                       <Badge variant={getStatusColor(order.status) as any}>
                         <StatusIcon className={styles.badgeIcon} />

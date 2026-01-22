@@ -10,32 +10,39 @@ import { CheckCircle, AlertCircle } from "lucide-react";
 import type { Route } from "./+types/order";
 import styles from "./order.module.css";
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
+  const { getCurrentUser } = await import("~/lib/auth");
+  const user = getCurrentUser();
+
+  if (!user) {
+    throw redirect("/login");
+  }
+
   const { getPricingPlans } = await import("~/lib/supabase-storage.server");
   const plans = await getPricingPlans();
   const plan = plans[0]; // Only one plan now
-  return { plan };
+  return { plan, user };
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const { getCurrentUser } = await import("~/lib/auth");
+  const user = getCurrentUser();
+
+  if (!user) {
+    return redirect("/login");
+  }
+
   const formData = await request.formData();
-  const name = formData.get("name") as string;
-  const email = formData.get("email") as string;
-  const phone = formData.get("phone") as string;
   const pages = parseInt(formData.get("pages") as string);
   const requirements = formData.get("requirements") as string;
+  const topic = formData.get("topic") as string;
+  const domain = formData.get("domain") as string;
+  const type = formData.get("type") as string;
+  const citationStyle = formData.get("citation_style") as string;
 
   // Validation
-  if (!name || !email || !phone || !pages || !requirements) {
+  if (!pages || !requirements || !topic || !domain || !type || !citationStyle) {
     return { error: "All fields are required" };
-  }
-
-  if (!/^\d{10}$/.test(phone)) {
-    return { error: "Phone number must be 10 digits" };
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Invalid email address" };
   }
 
   if (pages < 1) {
@@ -58,17 +65,23 @@ export async function action({ request }: Route.ActionArgs) {
     const extraPagesCost = extraPages * 50;
     const totalPrice = plan.base_price + extraPagesCost;
 
-    // Create order
+    // Calculate deadline based on delivery days
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + plan.delivery_days);
+
+    // Create order with user_id
     const order = await createOrder({
-      customer_name: name,
-      customer_email: email,
-      customer_phone: phone,
-      plan_id: plan.id,
-      plan_name: plan.name,
+      user_id: user.id,
+      topic,
+      domain,
+      type,
       pages,
-      requirements,
+      citation_style: citationStyle,
+      deadline: deadline.toISOString(),
+      notes: requirements,
+      plan_id: plan.id,
+      status: "Pending Payment",
       total_price: totalPrice,
-      status: "pending",
     });
 
     // Redirect to dashboard with success message
@@ -80,7 +93,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function OrderPage({ loaderData, actionData }: Route.ComponentProps) {
-  const { plan } = loaderData;
+  const { plan, user } = loaderData;
   const [pages, setPages] = useState(10);
 
   // Calculate price
@@ -113,30 +126,28 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
           </CardHeader>
           <CardContent>
             <Form method="post" className={styles.form}>
-              {/* Name */}
+              {/* Topic */}
               <div className={styles.field}>
-                <Label htmlFor="name">Full Name *</Label>
-                <Input type="text" id="name" name="name" placeholder="Enter your full name" required />
+                <Label htmlFor="topic">Research Topic *</Label>
+                <Input type="text" id="topic" name="topic" placeholder="e.g., Machine Learning in Healthcare" required />
               </div>
 
-              {/* Email */}
+              {/* Domain */}
               <div className={styles.field}>
-                <Label htmlFor="email">Email Address *</Label>
-                <Input type="email" id="email" name="email" placeholder="your.email@example.com" required />
+                <Label htmlFor="domain">Academic Domain *</Label>
+                <Input type="text" id="domain" name="domain" placeholder="e.g., Computer Science, Medicine, Business" required />
               </div>
 
-              {/* Phone */}
+              {/* Type */}
               <div className={styles.field}>
-                <Label htmlFor="phone">Phone Number *</Label>
-                <Input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  placeholder="10-digit mobile number"
-                  pattern="[0-9]{10}"
-                  maxLength={10}
-                  required
-                />
+                <Label htmlFor="type">Paper Type *</Label>
+                <Input type="text" id="type" name="type" placeholder="e.g., Research Paper, Thesis, Dissertation" required />
+              </div>
+
+              {/* Citation Style */}
+              <div className={styles.field}>
+                <Label htmlFor="citation_style">Citation Style *</Label>
+                <Input type="text" id="citation_style" name="citation_style" placeholder="e.g., APA, MLA, Chicago, IEEE" required />
               </div>
 
               {/* Number of Pages */}

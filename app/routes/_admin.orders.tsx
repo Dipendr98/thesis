@@ -89,33 +89,39 @@ export default function AdminOrders({ loaderData }: Route.ComponentProps) {
                 </CardHeader>
                 <CardContent className={styles.cardContent}>
                   <div className={styles.section}>
-                    <h4 className={styles.sectionTitle}>Customer Details</h4>
+                    <h4 className={styles.sectionTitle}>Order Details</h4>
                     <div className={styles.detailRow}>
                       <User size={16} />
-                      <span>{order.customer_name}</span>
+                      <span>User ID: {order.user_id?.slice(0, 8)}...</span>
                     </div>
                     <div className={styles.detailRow}>
-                      <Mail size={16} />
-                      <span>{order.customer_email}</span>
+                      <FileText size={16} />
+                      <span>{order.topic}</span>
                     </div>
-                    {order.customer_phone && (
-                      <div className={styles.detailRow}>
-                        <Phone size={16} />
-                        <span>{order.customer_phone}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className={styles.section}>
-                    <h4 className={styles.sectionTitle}>Order Details</h4>
                     <div className={styles.detailGrid}>
+                      <div className={styles.detailItem}>
+                        <span className={styles.label}>Domain:</span>
+                        <span className={styles.value}>{order.domain}</span>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.label}>Type:</span>
+                        <span className={styles.value}>{order.type}</span>
+                      </div>
                       <div className={styles.detailItem}>
                         <span className={styles.label}>Pages:</span>
                         <span className={styles.value}>{order.pages}</span>
                       </div>
                       <div className={styles.detailItem}>
+                        <span className={styles.label}>Citation:</span>
+                        <span className={styles.value}>{order.citation_style}</span>
+                      </div>
+                      <div className={styles.detailItem}>
                         <span className={styles.label}>Total:</span>
                         <span className={styles.value}>₹{order.total_price.toLocaleString()}</span>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.label}>Deadline:</span>
+                        <span className={styles.value}>{new Date(order.deadline).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>

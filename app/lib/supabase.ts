@@ -35,15 +35,25 @@ export interface PricingPlan {
 
 export interface Order {
   id: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  plan_id: string;
-  plan_name: string;
+  user_id: string;
+  topic: string;
+  domain: string;
+  type: string;
   pages: number;
-  requirements: string;
+  citation_style: string;
+  deadline: string;
+  notes?: string;
+  plan_id: string;
+  status: string;
+  abstract_required?: boolean;
+  plagiarism_check?: boolean;
+  include_charts?: boolean;
+  reference_files?: any;
+  payment_screenshot?: string;
+  deliverables?: any;
+  verified_at?: string;
+  verified_by?: string;
   total_price: number;
-  status: "pending" | "processing" | "completed" | "cancelled";
   created_at?: string;
   updated_at?: string;
 }

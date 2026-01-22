@@ -6,15 +6,19 @@ import type { Route } from "./+types/_admin.users";
 import styles from "./_admin.users.module.css";
 
 export async function loader() {
-  // Get orders from Supabase to extract unique customers
-  const { getOrders } = await import("~/lib/supabase-storage.server");
+  const { getOrders, getUsers } = await import("~/lib/supabase-storage.server");
   const orders = await getOrders();
+  const users = await getUsers();
 
-  // Extract unique customers from orders
+  // Create a map of user_id to user for quick lookup
+  const usersMap = new Map(users.map(user => [user.id, user]));
+
+  // Extract customer data from orders grouped by user_id
   const customersMap = new Map<string, {
+    id: string;
     email: string;
     name: string;
-    phone?: string;
+    mobile?: string;
     totalOrders: number;
     totalSpent: number;
     lastOrderDate: string;
@@ -22,30 +26,40 @@ export async function loader() {
   }>();
 
   orders.forEach((order) => {
-    const existing = customersMap.get(order.customer_email);
-    
+    const user = usersMap.get(order.user_id);
+    if (!user) return; // Skip orders without valid users
+
+    const existing = customersMap.get(order.user_id);
+
     if (existing) {
       existing.totalOrders++;
       existing.totalSpent += order.total_price;
-      existing.statuses[order.status as keyof typeof existing.statuses]++;
-      
+
+      // Normalize status to lowercase for counting
+      const status = order.status.toLowerCase();
+      if (status in existing.statuses) {
+        existing.statuses[status as keyof typeof existing.statuses]++;
+      }
+
       // Update last order date if more recent
       if (new Date(order.created_at!) > new Date(existing.lastOrderDate)) {
         existing.lastOrderDate = order.created_at!;
       }
     } else {
-      customersMap.set(order.customer_email, {
-        email: order.customer_email,
-        name: order.customer_name,
-        phone: order.customer_phone,
+      const status = order.status.toLowerCase();
+      customersMap.set(order.user_id, {
+        id: user.id,
+        email: user.email,
+        name: user.name || "Unknown",
+        mobile: user.mobile,
         totalOrders: 1,
         totalSpent: order.total_price,
         lastOrderDate: order.created_at!,
         statuses: {
-          pending: order.status === "pending" ? 1 : 0,
-          processing: order.status === "processing" ? 1 : 0,
-          completed: order.status === "completed" ? 1 : 0,
-          cancelled: order.status === "cancelled" ? 1 : 0,
+          pending: status === "pending" ? 1 : 0,
+          processing: status === "processing" ? 1 : 0,
+          completed: status === "completed" ? 1 : 0,
+          cancelled: status === "cancelled" ? 1 : 0,
         },
       });
     }
@@ -99,10 +113,10 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                     <Mail size={16} />
                     <span>{customer.email}</span>
                   </div>
-                  {customer.phone && (
+                  {customer.mobile && (
                     <div className={styles.detailRow}>
                       <Phone size={16} />
-                      <span>{customer.phone}</span>
+                      <span>{customer.mobile}</span>
                     </div>
                   )}
                   <div className={styles.detailRow}>

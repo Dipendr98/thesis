@@ -11,16 +11,14 @@ import styles from "./dashboard.module.css";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = getCurrentUser();
-  
+
   if (!user) {
     return { user: null, orders: [] };
   }
 
   try {
-    const { getOrdersByPhone } = await import("~/lib/supabase-storage.server");
-    // Use email or mobile for fetching orders
-    const identifier = user.mobile || user.email;
-    const orders = await getOrdersByPhone(identifier);
+    const { getOrdersByUserId } = await import("~/lib/supabase-storage.server");
+    const orders = await getOrdersByUserId(user.id);
     return { user, orders };
   } catch (error) {
     console.error("Error loading dashboard:", error);
@@ -117,7 +115,7 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
                       <div className={styles.orderHeader}>
                         <div className={styles.orderInfo}>
                           <div>
-                            <h4 className={styles.orderTitle}>{order.plan_name}</h4>
+                            <h4 className={styles.orderTitle}>{order.topic}</h4>
                             <p className={styles.orderDate}>
                               {new Date(order.created_at).toLocaleDateString()}
                             </p>
