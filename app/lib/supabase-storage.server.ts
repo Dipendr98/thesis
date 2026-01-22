@@ -257,16 +257,6 @@ export async function updateOrderStatus(
   return data;
 }
 
-export async function getOrdersByPhone(phone: string): Promise<Order[]> {
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("customer_phone", phone)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
 
 export async function getOrdersByUserId(userId: string): Promise<Order[]> {
   const { data, error } = await supabase
