@@ -124,7 +124,7 @@ CREATE TRIGGER update_qr_settings_updated_at BEFORE UPDATE ON qr_settings
 
 -- Insert default data
 INSERT INTO admins (id, email, password_hash, role)
-VALUES ('admin-1', 'admin@thesistrack.com', '$2a$10$YourHashedPasswordHere', 'admin')
+VALUES ('550e8400-e29b-41d4-a716-446655440000', 'admin@thesistrack.com', '$2a$10$YourHashedPasswordHere', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO pricing_plans (id, name, delivery_days, base_price, price_per_page)
