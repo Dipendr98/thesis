@@ -266,7 +266,7 @@ class Storage {
 
     if (!this.getAdmin()) {
       this.saveAdmin({
-        id: "admin-1",
+        id: "550e8400-e29b-41d4-a716-446655440000",
         email: "admin@thesistrack.com",
         passwordHash: "admin123",
         role: "admin",
