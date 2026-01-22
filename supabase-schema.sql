@@ -148,6 +148,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pricing_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
@@ -202,6 +203,19 @@ CREATE POLICY "Anyone can view QR settings"
   ON qr_settings FOR SELECT
   TO public
   USING (true);
+
+-- Admins table policies (restrictive access)
+-- Only authenticated admins can view their own record
+CREATE POLICY "Admins can view own record"
+  ON admins FOR SELECT
+  TO authenticated
+  USING (auth.uid()::text = id::text);
+
+-- Only authenticated admins can update their own record
+CREATE POLICY "Admins can update own record"
+  ON admins FOR UPDATE
+  TO authenticated
+  USING (auth.uid()::text = id::text);
 
 -- Grant permissions
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
