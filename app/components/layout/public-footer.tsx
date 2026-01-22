@@ -1,8 +1,10 @@
 import { Link } from "react-router";
-import { APP_CONFIG } from "~/config";
+import { APP_CONFIG, getAppSettings } from "~/config";
 import styles from "./public-footer.module.css";
 
 export function PublicFooter() {
+  const settings = getAppSettings();
+
   return (
     <footer className={styles.footer}>
       <div className={styles.container}>
@@ -34,7 +36,7 @@ export function PublicFooter() {
             <h3>Support</h3>
             <div className={styles.links}>
               <a
-                href={`https://wa.me/${APP_CONFIG.supportWhatsApp}`}
+                href={`https://wa.me/${settings.supportWhatsApp}`}
                 className={styles.link}
                 target="_blank"
                 rel="noopener noreferrer"

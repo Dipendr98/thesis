@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, NavLink } from "react-router";
 import { useEffect } from "react";
-import { FileText, LogOut, Package, DollarSign, Users, ShoppingCart } from "lucide-react";
+import { FileText, LogOut, Package, DollarSign, Users, ShoppingCart, Settings } from "lucide-react";
 import { getCurrentAdmin, logoutAdmin } from "~/lib/auth";
 import { APP_CONFIG } from "~/config";
 import { Button } from "~/components/ui/button/button";
@@ -70,6 +70,13 @@ export default function AdminLayout() {
             >
               <DollarSign />
               Pricing Plans
+            </NavLink>
+            <NavLink
+              to="/admin/settings"
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}
+            >
+              <Settings />
+              Settings
             </NavLink>
           </nav>
         </aside>

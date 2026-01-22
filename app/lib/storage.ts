@@ -39,6 +39,13 @@ export interface QRSettings {
   updatedAt: string;
 }
 
+export interface AppSettings {
+  id: string;
+  supportEmail: string;
+  supportWhatsApp: string;
+  updatedAt: string;
+}
+
 export interface Order {
   id: string;
   userId: string;
@@ -155,6 +162,23 @@ class Storage {
 
   saveQRSettings(settings: QRSettings): void {
     this.setItem("qrSettings", settings);
+  }
+
+  // App Settings
+  getAppSettings(): AppSettings | null {
+    return this.getItem<AppSettings | null>("appSettings", null);
+  }
+
+  saveAppSettings(settings: AppSettings): void {
+    this.setItem("appSettings", settings);
+  }
+
+  updateAdminPassword(newPassword: string): void {
+    const admin = this.getAdmin();
+    if (admin) {
+      admin.passwordHash = newPassword;
+      this.saveAdmin(admin);
+    }
   }
 
   // Orders
@@ -277,6 +301,15 @@ class Storage {
       this.saveQRSettings({
         id: "qr-1",
         qrImageUrl: "https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=400&h=400&fit=crop",
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    if (!this.getAppSettings()) {
+      this.saveAppSettings({
+        id: "app-settings-1",
+        supportEmail: "admin@thesistrack.com",
+        supportWhatsApp: "+1234567890",
         updatedAt: new Date().toISOString(),
       });
     }

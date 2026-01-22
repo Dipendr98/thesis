@@ -1,10 +1,11 @@
 import { MessageCircle } from "lucide-react";
-import { APP_CONFIG } from "~/config";
+import { getAppSettings } from "~/config";
 import styles from "./support-button.module.css";
 
 export function SupportButton() {
   const handleClick = () => {
-    window.open(`https://wa.me/${APP_CONFIG.supportWhatsApp}`, "_blank");
+    const settings = getAppSettings();
+    window.open(`https://wa.me/${settings.supportWhatsApp}`, "_blank");
   };
 
   return (
