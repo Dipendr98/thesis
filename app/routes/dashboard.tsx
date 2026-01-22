@@ -37,8 +37,8 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
     }
   }, [user, navigate]);
 
-  const handleLogout = () => {
-    logoutUser();
+  const handleLogout = async () => {
+    await logoutUser();
     navigate("/login");
   };
 

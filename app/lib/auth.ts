@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import type { User, Admin } from "./storage";
+import { supabase } from "./supabase";
 
 // Email-based OTP authentication (uses server API routes)
 // These are client-side helpers for backwards compatibility
@@ -21,8 +22,10 @@ export const loginAdmin = (email: string, password: string): Admin | null => {
   return null;
 };
 
-export const logoutUser = (): void => {
+export const logoutUser = async (): Promise<void> => {
   storage.setCurrentUser(null);
+  // Also sign out from Supabase if using OAuth
+  await supabase.auth.signOut();
 };
 
 export const logoutAdmin = (): void => {
