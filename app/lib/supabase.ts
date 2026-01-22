@@ -11,17 +11,37 @@ const supabaseKey =
     ? process.env.SUPABASE_API_KEY
     : import.meta.env.VITE_SUPABASE_API_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing Supabase environment variables. Please check your .env file.");
-}
+// Create a placeholder client if env vars are missing (for development)
+// This prevents the entire app from crashing during initialization
+const createSupabaseClient = () => {
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn("⚠️ Missing Supabase environment variables. Please check your .env file.");
+    console.warn("Using placeholder client - authentication features will not work.");
+    // Return a placeholder client with dummy values
+    return createClient(
+      "https://placeholder.supabase.co",
+      "placeholder-key",
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      }
+    );
+  }
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+};
+
+export const supabase = createSupabaseClient();
+export const hasValidConfig = !!(supabaseUrl && supabaseKey);
 
 export interface PricingPlan {
   id: string;

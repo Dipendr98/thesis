@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button/button";
 import { Input } from "~/components/ui/input/input";
 import { getCurrentUser } from "~/lib/auth";
 import { APP_CONFIG } from "~/config";
-import { supabase } from "~/lib/supabase";
+import { supabase, hasValidConfig } from "~/lib/supabase";
 import styles from "./login.module.css";
 
 // Helper function to fetch with timeout
@@ -133,10 +133,20 @@ export default function LoginPage() {
   };
 
   const loginWithGoogle = async () => {
+    console.log("🔵 Google login button clicked");
     setError("");
     setLoading(true);
 
+    // Check if Supabase is properly configured
+    if (!hasValidConfig) {
+      console.error("❌ Supabase not configured");
+      setError("Authentication is not configured. Please set up Supabase environment variables.");
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log("🔵 Initiating Google OAuth...");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -145,10 +155,15 @@ export default function LoginPage() {
       });
 
       if (error) {
+        console.error("❌ Google OAuth error:", error);
         setError(error.message);
         setLoading(false);
+      } else {
+        console.log("✅ Google OAuth initiated successfully");
+        // Redirecting to Google - keep loading state
       }
     } catch (err) {
+      console.error("❌ Unexpected error during Google login:", err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -204,11 +219,26 @@ export default function LoginPage() {
                 <span>or</span>
               </div>
 
+              {!hasValidConfig && (
+                <div className={styles.configWarning} style={{
+                  padding: "var(--space-3)",
+                  marginBottom: "var(--space-3)",
+                  background: "var(--color-warning-3)",
+                  border: "1px solid var(--color-warning-7)",
+                  borderRadius: "var(--radius-2)",
+                  color: "var(--color-warning-11)",
+                  fontSize: "var(--font-size-1)"
+                }}>
+                  ⚠️ <strong>Configuration Required:</strong> Supabase environment variables are not set.
+                  Please check your .env file.
+                </div>
+              )}
+
               <Button
                 type="button"
                 variant="outline"
                 onClick={loginWithGoogle}
-                disabled={loading}
+                disabled={loading || !hasValidConfig}
                 className={styles.googleButton}
               >
                 <svg className={styles.googleIcon} viewBox="0 0 24 24" width="20" height="20">
