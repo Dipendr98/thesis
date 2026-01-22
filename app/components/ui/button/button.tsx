@@ -9,26 +9,23 @@ interface ButtonProps extends React.ComponentProps<"button"> {
   asChild?: boolean;
 }
 
-const Button: React.FC<ButtonProps> = ({
-  className,
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}) => {
-  const Comp = asChild ? Slot : "button";
-  return (
-    <Comp
-      className={classNames(
-        styles.base,
-        styles[variant],
-        styles[`size${size.charAt(0).toUpperCase() + size.slice(1)}`],
-        className
-      )}
-      {...props}
-    />
-  );
-};
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = "default", size = "default", asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={classNames(
+          styles.base,
+          styles[variant],
+          styles[`size${size.charAt(0).toUpperCase() + size.slice(1)}`],
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
 Button.displayName = "Button";
 
 export { Button };
