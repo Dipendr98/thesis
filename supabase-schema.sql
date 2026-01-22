@@ -120,7 +120,7 @@ CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
 
 DROP TRIGGER IF EXISTS update_qr_settings_updated_at ON qr_settings;
 CREATE TRIGGER update_qr_settings_updated_at BEFORE UPDATE ON qr_settings
-    FOR EACH ROW EXECUTE FUNCTION update_qr_settings_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert default data
 INSERT INTO admins (id, email, password_hash, role)
