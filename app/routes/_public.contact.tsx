@@ -4,11 +4,12 @@ import { Card, CardContent } from "~/components/ui/card/card";
 import { Button } from "~/components/ui/button/button";
 import { Input } from "~/components/ui/input/input";
 import { Textarea } from "~/components/ui/textarea/textarea";
-import { APP_CONFIG } from "~/config";
+import { getAppSettings } from "~/config";
 import styles from "./_public.contact.module.css";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const settings = getAppSettings();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +27,7 @@ export default function ContactPage() {
           <CardContent>
             <Mail className={styles.contactIcon} />
             <h3>Email</h3>
-            <p>{APP_CONFIG.adminEmail}</p>
+            <p>{settings.supportEmail}</p>
           </CardContent>
         </Card>
 
@@ -34,7 +35,7 @@ export default function ContactPage() {
           <CardContent>
             <MessageCircle className={styles.contactIcon} />
             <h3>WhatsApp</h3>
-            <p>{APP_CONFIG.supportWhatsApp}</p>
+            <p>{settings.supportWhatsApp}</p>
           </CardContent>
         </Card>
 
