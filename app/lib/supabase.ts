@@ -1,9 +1,27 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.SUPABASE_PROJECT_URL!;
-const supabaseKey = process.env.SUPABASE_API_KEY!;
+// Get environment variables - works for both server and client
+const supabaseUrl =
+  typeof process !== "undefined" && process.env.SUPABASE_PROJECT_URL
+    ? process.env.SUPABASE_PROJECT_URL
+    : import.meta.env.VITE_SUPABASE_PROJECT_URL;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseKey =
+  typeof process !== "undefined" && process.env.SUPABASE_API_KEY
+    ? process.env.SUPABASE_API_KEY
+    : import.meta.env.VITE_SUPABASE_API_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing Supabase environment variables. Please check your .env file.");
+}
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 export interface PricingPlan {
   id: string;
