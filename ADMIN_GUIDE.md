@@ -165,8 +165,8 @@ app/
 ```
 
 ### Environment Variables
-- `SUPABASE_PROJECT_URL` - Your Supabase project URL
-- `SUPABASE_API_KEY` - Supabase API key (anon/public)
+- `SUPABASE_URL` / `VITE_SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_ANON_KEY` / `VITE_SUPABASE_ANON_KEY` - Supabase API key (anon/public)
 
 ---
 
