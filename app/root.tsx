@@ -5,6 +5,7 @@ import { Toaster } from "./components/ui/toaster/toaster";
 import colorSchemeApi from "@dazl/color-scheme/client?url";
 import { storage } from "./lib/storage";
 import { supabase } from "./lib/supabase.client";
+import type { User } from "@supabase/supabase-js";
 
 import "./styles/reset.css";
 import "./styles/global.css";
@@ -20,7 +21,7 @@ import favicon from "/favicon.svg";
 
 // Hook to detect logged-in user
 export function useUser() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
