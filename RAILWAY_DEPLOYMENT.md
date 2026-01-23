@@ -55,10 +55,10 @@ In Railway Dashboard, go to your project > Variables tab and add the following:
 NODE_ENV=production
 
 # Supabase Configuration
-SUPABASE_PROJECT_URL=https://loegrisrrrqyaixglljy.supabase.co
-SUPABASE_API_KEY=sb_publishable_30mbXibFDKN2rXZXQlkDGQ_j_M5ZWOZ
-VITE_SUPABASE_PROJECT_URL=https://loegrisrrrqyaixglljy.supabase.co
-VITE_SUPABASE_API_KEY=sb_publishable_30mbXibFDKN2rXZXQlkDGQ_j_M5ZWOZ
+SUPABASE_URL=https://loegrisrrrqyaixglljy.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_30mbXibFDKN2rXZXQlkDGQ_j_M5ZWOZ
+VITE_SUPABASE_URL=https://loegrisrrrqyaixglljy.supabase.co
+VITE_SUPABASE_ANON_KEY=sb_publishable_30mbXibFDKN2rXZXQlkDGQ_j_M5ZWOZ
 
 # SMTP Configuration (Gmail)
 SMTP_HOST=smtp.gmail.com
@@ -202,10 +202,10 @@ Railway automatically sets the `PORT` environment variable. The Dockerfile is co
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `NODE_ENV` | Environment mode | `production` |
-| `SUPABASE_PROJECT_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `SUPABASE_API_KEY` | Supabase anon/public key | `sb_publishable_xxx` |
-| `VITE_SUPABASE_PROJECT_URL` | Client-side Supabase URL | Same as above |
-| `VITE_SUPABASE_API_KEY` | Client-side Supabase key | Same as above |
+| `SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
+| `SUPABASE_ANON_KEY` | Supabase anon/public key | `sb_publishable_xxx` |
+| `VITE_SUPABASE_URL` | Client-side Supabase URL | Same as above |
+| `VITE_SUPABASE_ANON_KEY` | Client-side Supabase key | Same as above |
 | `SMTP_HOST` | SMTP server hostname | `smtp.gmail.com` |
 | `SMTP_PORT` | SMTP server port | `465` |
 | `SMTP_USER` | SMTP username (email) | `your-email@gmail.com` |

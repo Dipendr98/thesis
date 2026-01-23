@@ -6,8 +6,8 @@ Use the pre-installed packages and environment variables directly — no additio
 
 - Available packages: @supabase/supabase-js
 - Available env vars:
-  - `SUPABASE_API_KEY` — API key for authentication
-  - `SUPABASE_PROJECT_URL` — Project URL (Example: `https://project-id.supabase.co`)
+  - `SUPABASE_ANON_KEY` / `VITE_SUPABASE_ANON_KEY` — Anonymous API key for authentication
+  - `SUPABASE_URL` / `VITE_SUPABASE_URL` — Project URL (Example: `https://project-id.supabase.co`)
 
 ## Guidelines
 

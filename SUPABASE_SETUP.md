@@ -24,12 +24,12 @@ The Supabase credentials have already been configured in your `.env` file:
 
 ```env
 # Supabase Configuration
-SUPABASE_PROJECT_URL=https://loegrisrrrqyaixglljy.supabase.co
-SUPABASE_API_KEY=sb_publishable_30mbXibFDKN2rXZXQlkDGQ_j_M5ZWOZ
+SUPABASE_URL=https://loegrisrrrqyaixglljy.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_30mbXibFDKN2rXZXQlkDGQ_j_M5ZWOZ
 
 # For client-side access (Vite)
-VITE_SUPABASE_PROJECT_URL=https://loegrisrrrqyaixglljy.supabase.co
-VITE_SUPABASE_API_KEY=sb_publishable_30mbXibFDKN2rXZXQlkDGQ_j_M5ZWOZ
+VITE_SUPABASE_URL=https://loegrisrrrqyaixglljy.supabase.co
+VITE_SUPABASE_ANON_KEY=sb_publishable_30mbXibFDKN2rXZXQlkDGQ_j_M5ZWOZ
 ```
 
 ### Important Security Notes

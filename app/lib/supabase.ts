@@ -2,14 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 
 // Get environment variables - works for both server and client
 const supabaseUrl =
-  typeof process !== "undefined" && process.env.SUPABASE_PROJECT_URL
-    ? process.env.SUPABASE_PROJECT_URL
-    : import.meta.env.VITE_SUPABASE_PROJECT_URL;
+  typeof process !== "undefined" && process.env.SUPABASE_URL
+    ? process.env.SUPABASE_URL
+    : import.meta.env.VITE_SUPABASE_URL;
 
 const supabaseKey =
-  typeof process !== "undefined" && process.env.SUPABASE_API_KEY
-    ? process.env.SUPABASE_API_KEY
-    : import.meta.env.VITE_SUPABASE_API_KEY;
+  typeof process !== "undefined" && process.env.SUPABASE_ANON_KEY
+    ? process.env.SUPABASE_ANON_KEY
+    : import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Create a placeholder client if env vars are missing (for development)
 // This prevents the entire app from crashing during initialization
