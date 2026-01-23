@@ -167,6 +167,19 @@
   font-size: var(--font-size-0);
 }
 
+.supabaseWarning {
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.warningIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 .googleButton {
   width: 100%;
   display: flex;

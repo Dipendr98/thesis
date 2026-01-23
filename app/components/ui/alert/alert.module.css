@@ -20,6 +20,16 @@
   color: var(--color-error-contrast);
 }
 
+.warning {
+  background: var(--color-warning-3);
+  color: var(--color-warning-11);
+  border-color: var(--color-warning-6);
+}
+
+.warning svg {
+  color: var(--color-warning-11);
+}
+
 .title {
   margin-bottom: var(--space-1);
   font-weight: 500;
