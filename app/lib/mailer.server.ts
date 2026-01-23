@@ -19,6 +19,9 @@ export function makeTransporter() {
 export async function sendOtpEmail(to: string, otp: string, ttlMin: number = 10) {
   const transporter = makeTransporter();
 
+  // Use FROM_EMAIL if available, fallback to SMTP_USER for backwards compatibility
+  const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
+
   // Create a timeout promise that rejects after 15 seconds
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => reject(new Error('Email sending timeout after 15 seconds')), 15000);
@@ -26,7 +29,7 @@ export async function sendOtpEmail(to: string, otp: string, ttlMin: number = 10)
 
   // Race between sending email and timeout
   const sendMailPromise = transporter.sendMail({
-    from: `"ThesisTrack" <${process.env.SMTP_USER}>`,
+    from: `"ThesisTrack" <${fromEmail}>`,
     to,
     subject: "Your ThesisTrack Login OTP",
     text: `Your OTP is ${otp}. It expires in ${ttlMin} minutes.`,
