@@ -1,29 +1,47 @@
 # Email Troubleshooting Guide
 
-## Common Issue: Connection Timeout (ETIMEDOUT)
+## New Implementation: Dual Email System
 
-If you see this error:
+The application now supports **two email sending methods** with automatic fallback:
+
+1. **Resend API** (Primary, Recommended) - HTTP-based, no SMTP port issues
+2. **SMTP** (Fallback) - Traditional email protocol (Gmail, etc.)
+
+The system automatically tries Resend first, then falls back to SMTP if Resend is not configured.
+
+## Quick Start: Recommended Setup
+
+### Option 1: Resend API (Recommended for Production)
+
+**Why Resend?**
+- ✅ HTTP-based (no firewall/port issues)
+- ✅ Works reliably in containerized/cloud environments
+- ✅ Fast and simple setup
+- ✅ Free tier available for testing
+
+**Setup Steps:**
+
+1. Sign up at https://resend.com
+2. Get your API key from https://resend.com/api-keys
+3. Set environment variable:
+
+```env
+RESEND_API_KEY=re_YourResendAPIKey
+FROM_EMAIL=onboarding@resend.dev  # For testing
+# FROM_EMAIL=noreply@yourdomain.com  # After domain verification
 ```
-Error: Connection timeout
-code: 'ETIMEDOUT',
-command: 'CONN'
-```
 
-This means the SMTP server connection is failing. Follow the steps below to fix it.
+**For Testing**: Use `onboarding@resend.dev` - works immediately, no verification needed!
 
-## Root Causes & Solutions
+**For Production**: Verify your domain at https://resend.com/domains, then use an email from your verified domain.
 
-### 1. **Resend SMTP Issues** (Most Common)
+### Option 2: SMTP Fallback (Gmail Example)
 
-**Problem**: Resend SMTP requires a verified domain and can be unreliable.
-
-**Solution**: Switch to Gmail (recommended) or verify your domain in Resend.
-
-#### Option A: Switch to Gmail (Easiest)
+Only needed if Resend is not configured or as a backup.
 
 1. Enable 2-factor authentication on your Google account
 2. Generate an app password at https://myaccount.google.com/apppasswords
-3. Update your `.env` file:
+3. Set environment variables:
 
 ```env
 SMTP_HOST=smtp.gmail.com
@@ -33,87 +51,135 @@ SMTP_PASS=your-16-digit-app-password
 FROM_EMAIL=your-email@gmail.com
 ```
 
-#### Option B: Fix Resend Configuration
+⚠️ **Note**: SMTP connections may fail in cloud/containerized environments due to firewall restrictions.
 
-1. Verify your domain at https://resend.com/domains
-2. Update your `.env` file:
+## Common Issues & Solutions
 
-```env
-SMTP_HOST=smtp.resend.com
-SMTP_PORT=465
-SMTP_USER=resend
-SMTP_PASS=re_YourActualAPIKey
-FROM_EMAIL=noreply@your-verified-domain.com
+### Issue 1: Connection Timeout (ETIMEDOUT)
+
+If you see:
+```
+Error: Connection timeout
+code: 'ETIMEDOUT',
+command: 'CONN'
 ```
 
-**Important**: `FROM_EMAIL` must be from a domain you've verified in Resend!
+**This is an SMTP-specific issue.** Solutions:
 
-### 2. **Missing Environment Variables**
+1. **Switch to Resend API** (recommended - no SMTP ports involved):
+   ```env
+   RESEND_API_KEY=re_YourKey
+   FROM_EMAIL=onboarding@resend.dev
+   ```
 
-Check that ALL required variables are set:
+2. **Or fix SMTP**:
+   - Check firewall allows outbound connections to port 465/587
+   - Verify SMTP credentials are correct
+   - Try port 587 instead of 465
 
+### Issue 2: Missing Environment Variables
+
+**For Resend API** (only one variable needed):
 ```bash
-# Check your environment variables
+echo "RESEND_API_KEY: $RESEND_API_KEY"
+echo "FROM_EMAIL: $FROM_EMAIL"
+```
+
+**For SMTP fallback** (all required):
+```bash
 echo "SMTP_HOST: $SMTP_HOST"
 echo "SMTP_PORT: $SMTP_PORT"
 echo "SMTP_USER: $SMTP_USER"
 echo "SMTP_PASS: $SMTP_PASS (length: ${#SMTP_PASS})"
-echo "FROM_EMAIL: $FROM_EMAIL"
 ```
 
-If any are missing or empty, the email will fail.
-
-### 3. **Railway/Deployment Issues**
-
-If running on Railway or other platforms:
-
-1. Go to your Railway project settings
-2. Navigate to Variables tab
-3. Ensure all SMTP variables are set correctly
-4. Redeploy after making changes
-
-### 4. **Firewall/Network Issues**
-
-Some networks block SMTP ports (465, 587). If Gmail/Resend don't work:
-
-1. Try port 587 instead of 465:
-```env
-SMTP_PORT=587
+**Error if neither configured**:
+```
+No email service configured. Set either RESEND_API_KEY or SMTP credentials.
 ```
 
-2. Check if your network/firewall allows SMTP traffic
+### Issue 3: Railway/Deployment Configuration
+
+**Setting up on Railway:**
+
+1. Go to your Railway project
+2. Click on Variables tab
+3. Add **either** Resend API **or** SMTP variables:
+
+**Resend (Recommended)**:
+```
+RESEND_API_KEY=re_YourAPIKey
+FROM_EMAIL=onboarding@resend.dev
+```
+
+**SMTP (Fallback)**:
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your@gmail.com
+SMTP_PASS=your-app-password
+FROM_EMAIL=your@gmail.com
+```
+
+4. Redeploy after adding variables
+
+### Issue 4: Resend API Errors
+
+**"Domain not verified" error**:
+- For testing: Use `FROM_EMAIL=onboarding@resend.dev`
+- For production: Verify your domain at https://resend.com/domains
+
+**"Invalid API key" error**:
+- Check your API key is correct (starts with `re_`)
+- Generate a new key at https://resend.com/api-keys
 
 ## Debugging with Console Logs
 
-The updated code now includes comprehensive logging. When you request an OTP, check the console for:
+The code includes comprehensive logging showing which method is being used:
 
+### Successful Resend API Example:
 ```
-🔐 [REQUEST-OTP][xxx] ===== Starting OTP request =====
-📧 [REQUEST-OTP][xxx] Email received: user@example.com
-✅ [REQUEST-OTP][xxx] Email validation passed
-🔢 [REQUEST-OTP][xxx] Generated OTP: 123456 (TTL: 10 min)
-💾 [REQUEST-OTP][xxx] Storing OTP in database...
-✅ [REQUEST-OTP][xxx] OTP stored successfully
-📤 [REQUEST-OTP][xxx] Attempting to send email...
-
-📧 [MAILER] Creating transporter with config: {...}
-🔄 [MAILER] Verifying SMTP connection...
+📧 [MAILER] Starting OTP email send process
+📧 [MAILER] Recipient: user@example.com
+📧 [MAILER] Available methods: { resend: true, smtp: false }
+📧 [MAILER] Using Resend API
+✅ [MAILER] Email sent via Resend in 245 ms
+📧 [MAILER] Message ID: abc123...
 ```
 
-The logs will show exactly where the failure occurs:
+### Resend with SMTP Fallback Example:
+```
+📧 [MAILER] Available methods: { resend: true, smtp: true }
+📧 [MAILER] Using Resend API
+❌ [MAILER] Resend failed: Domain not verified
+🔄 [MAILER] Falling back to SMTP...
+📧 [MAILER] Using SMTP (nodemailer fallback)
+✅ [MAILER] Email sent via SMTP in 1024 ms
+```
 
-- **❌ Missing environment variables**: Check your `.env` file
-- **❌ SMTP verification failed**: Connection to SMTP server failed (network/auth issue)
-- **❌ Email send failed**: Email composition or sending failed
+### Error Indicators:
+- **❌ No email service configured**: Neither Resend nor SMTP is set up
+- **❌ Resend failed + SMTP failed**: Both methods failed - check logs for specific errors
+- **❌ SMTP verification failed**: SMTP connection/auth issue (firewall, credentials)
 
 ## Quick Fix Checklist
 
-- [ ] All SMTP variables are set in `.env` or Railway
+### For Resend API (Recommended):
+- [ ] `RESEND_API_KEY` is set (starts with `re_`)
+- [ ] `FROM_EMAIL` is set (use `onboarding@resend.dev` for testing)
+- [ ] API key is valid (check at https://resend.com/api-keys)
+- [ ] For production: Domain is verified at https://resend.com/domains
+
+### For SMTP Fallback:
+- [ ] All SMTP variables set: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`
 - [ ] Using Gmail with app password (not regular password)
-- [ ] If using Resend, domain is verified
-- [ ] FROM_EMAIL matches the SMTP_USER (for Gmail) or verified domain (for Resend)
-- [ ] Restarted the application after changing `.env`
+- [ ] `FROM_EMAIL` matches `SMTP_USER` (for Gmail)
+- [ ] Port 465 or 587 is not blocked by firewall
+
+### General:
+- [ ] Restarted application after changing environment variables
 - [ ] Check console logs for detailed error messages
+- [ ] Verified variables are set in Railway (if deployed)
 
 ## Development Mode Fallback
 
@@ -132,10 +198,77 @@ The system now includes a fallback for development:
 ============================================================
 ```
 
+## Email Sending Architecture
+
+The system uses a **smart fallback strategy**:
+
+```
+Request OTP
+    ↓
+Check configured methods
+    ↓
+Has RESEND_API_KEY?
+    ├─ YES → Try Resend API (HTTP)
+    │        ├─ SUCCESS → Done ✅
+    │        └─ FAIL → Has SMTP config?
+    │                  ├─ YES → Try SMTP
+    │                  │        ├─ SUCCESS → Done ✅
+    │                  │        └─ FAIL → Error ❌
+    │                  └─ NO → Error ❌
+    └─ NO → Has SMTP config?
+           ├─ YES → Try SMTP
+           │        ├─ SUCCESS → Done ✅
+           │        └─ FAIL → Error ❌
+           └─ NO → Error: No email service configured ❌
+```
+
 ## Still Having Issues?
 
-1. Check the full console logs for detailed error information
-2. Verify your SMTP credentials are correct
-3. Try switching from Resend to Gmail or vice versa
-4. Ensure your deployment platform allows outbound SMTP connections
-5. Check if your email provider requires additional security settings
+### Quick Debugging Steps:
+
+1. **Check which methods are available**:
+   - Look for log: `📧 [MAILER] Available methods: { resend: X, smtp: Y }`
+   - Both false? No email service is configured
+
+2. **For Resend issues**:
+   - Verify API key at https://resend.com/api-keys
+   - Try using `onboarding@resend.dev` for `FROM_EMAIL`
+   - Check Resend dashboard for error details
+
+3. **For SMTP issues**:
+   - Verify all 4 variables are set (HOST, PORT, USER, PASS)
+   - Check firewall allows outbound connections
+   - For Gmail: Confirm using app password, not account password
+   - Try port 587 instead of 465
+
+4. **For both failing**:
+   - Restart application after setting variables
+   - Check Railway/deployment platform for variable typos
+   - Review full console logs for specific error messages
+
+### Recommended Setup by Environment:
+
+**Development/Testing**:
+```env
+RESEND_API_KEY=re_test_key
+FROM_EMAIL=onboarding@resend.dev
+```
+
+**Production**:
+```env
+RESEND_API_KEY=re_production_key
+FROM_EMAIL=noreply@yourdomain.com  # (verified domain)
+```
+
+**Production with SMTP Backup**:
+```env
+# Primary: Resend
+RESEND_API_KEY=re_production_key
+FROM_EMAIL=noreply@yourdomain.com
+
+# Fallback: Gmail
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=backup@gmail.com
+SMTP_PASS=app-password-here
+```
