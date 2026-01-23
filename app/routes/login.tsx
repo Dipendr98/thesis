@@ -212,16 +212,7 @@ export default function LoginPage() {
               </div>
 
               {!isConfigured && (
-                <div style={{
-                  padding: "0.75rem",
-                  marginBottom: "1rem",
-                  backgroundColor: "#fee2e2",
-                  color: "#991b1b",
-                  borderRadius: "0.5rem",
-                  border: "1px solid #f87171",
-                  fontSize: "0.875rem",
-                  textAlign: "center"
-                }}>
+                <div className={styles.supabaseWarning}>
                   ⚠️ Supabase not configured in this environment
                 </div>
               )}
