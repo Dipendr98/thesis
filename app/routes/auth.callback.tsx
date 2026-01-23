@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { supabase } from "~/lib/supabase";
+import { supabase } from "~/lib/supabase.client";
 import { storage } from "~/lib/storage";
 import type { User } from "~/lib/storage";
 

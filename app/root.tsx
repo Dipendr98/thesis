@@ -1,9 +1,10 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Route } from "./+types/root";
 import { Toaster } from "./components/ui/toaster/toaster";
 import colorSchemeApi from "@dazl/color-scheme/client?url";
 import { storage } from "./lib/storage";
+import { supabase } from "./lib/supabase.client";
 
 import "./styles/reset.css";
 import "./styles/global.css";
@@ -16,6 +17,29 @@ import "./styles/tokens/typography.css";
 import "./styles/theme.css";
 import { useColorScheme } from "@dazl/color-scheme/react";
 import favicon from "/favicon.svg";
+
+// Hook to detect logged-in user
+export function useUser() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  return user;
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
