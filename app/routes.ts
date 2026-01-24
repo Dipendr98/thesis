@@ -8,6 +8,7 @@ export default [
     route("contact", "routes/_public.contact.tsx"),
   ]),
   route("login", "routes/login.tsx"),
+  route("auth/callback", "routes/auth.callback.tsx"),
   route("order", "routes/order.tsx"),
   route("dashboard", "routes/dashboard.tsx"),
   ...prefix("api/auth", [

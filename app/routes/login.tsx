@@ -160,7 +160,7 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://thesis-production-db95.up.railway.app/auth/callback"
+          redirectTo: "https://thesistrack.up.railway.app/auth/callback"
         },
       });
 
