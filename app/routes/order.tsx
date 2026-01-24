@@ -62,7 +62,7 @@ export async function action({ request }: Route.ActionArgs) {
     deadline.setDate(deadline.getDate() + plan.delivery_days);
 
     // Create order with user_id
-    const order = await createOrder({
+    const orderPayload = {
       user_id: userId,
       topic,
       domain,
@@ -74,7 +74,9 @@ export async function action({ request }: Route.ActionArgs) {
       plan_id: plan.id,
       status: "Pending Payment",
       total_price: totalPrice,
-    });
+    };
+    console.log(Object.keys(orderPayload));
+    const order = await createOrder(orderPayload);
 
     // Redirect to dashboard with success message
     return redirect(`/dashboard?order=${order.id}`);
