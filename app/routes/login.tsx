@@ -5,6 +5,7 @@ import { Card, CardContent } from "~/components/ui/card/card";
 import { Button } from "~/components/ui/button/button";
 import { Input } from "~/components/ui/input/input";
 import { getCurrentUser } from "~/lib/auth";
+import { storage } from "~/lib/storage";
 import { APP_CONFIG } from "~/config";
 import { supabase, isConfigured } from "~/lib/supabase.client";
 import styles from "./login.module.css";
@@ -109,7 +110,19 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Reload to update session
+        // Save user to localStorage on client-side (server can't access localStorage)
+        if (data.user) {
+          const user = {
+            id: data.user.id,
+            email: data.user.email,
+            createdAt: new Date().toISOString(),
+          };
+          // Save user to users list (for future lookups)
+          storage.saveUser(user);
+          // Set as current logged-in user
+          storage.setCurrentUser(user);
+        }
+        // Redirect to dashboard
         window.location.href = "/dashboard";
       } else {
         setError(data.error || "Invalid OTP. Please try again.");
