@@ -318,10 +318,18 @@ export async function uploadOrderPaper(
   file: File,
   orderId: string
 ): Promise<{ storagePath: string; publicUrl: string }> {
-  const fileExt = file.name.split(".").pop();
-  const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-  const fileName = `${orderId}-${Date.now()}-${sanitizedName}`;
-  const filePath = `order-papers/${fileName}`;
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .select("user_id")
+    .eq("id", orderId)
+    .single();
+
+  if (orderError || !order?.user_id) {
+    throw new Error("Failed to resolve order user.");
+  }
+
+  const fileExt = file.name.split(".").pop() || "pdf";
+  const filePath = `orders/${order.user_id}/${orderId}/paper.${fileExt}`;
 
   // Upload the file to Supabase Storage
   const { error: uploadError } = await supabaseAdmin.storage
