@@ -1,5 +1,6 @@
-import { Form, useLoaderData, useActionData, redirect } from "react-router";
-import { useState } from "react";
+import { Form, useLoaderData, useActionData, redirect, useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { getCurrentUser } from "~/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card/card";
 import { Button } from "~/components/ui/button/button";
 import { Input } from "~/components/ui/input/input";
@@ -11,28 +12,15 @@ import type { Route } from "./+types/order";
 import styles from "./order.module.css";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { getCurrentUser } = await import("~/lib/auth");
-  const user = getCurrentUser();
-
-  if (!user) {
-    throw redirect("/login");
-  }
-
   const { getPricingPlans } = await import("~/lib/supabase-storage.server");
   const plans = await getPricingPlans();
   const plan = plans[0]; // Only one plan now
-  return { plan, user };
+  return { plan };
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const { getCurrentUser } = await import("~/lib/auth");
-  const user = getCurrentUser();
-
-  if (!user) {
-    return redirect("/login");
-  }
-
   const formData = await request.formData();
+  const userId = formData.get("user_id") as string;
   const pages = parseInt(formData.get("pages") as string);
   const requirements = formData.get("requirements") as string;
   const topic = formData.get("topic") as string;
@@ -41,6 +29,10 @@ export async function action({ request }: Route.ActionArgs) {
   const citationStyle = formData.get("citation_style") as string;
 
   // Validation
+  if (!userId) {
+    return redirect("/login");
+  }
+
   if (!pages || !requirements || !topic || !domain || !type || !citationStyle) {
     return { error: "All fields are required" };
   }
@@ -71,7 +63,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     // Create order with user_id
     const order = await createOrder({
-      user_id: user.id,
+      user_id: userId,
       topic,
       domain,
       type,
@@ -93,8 +85,20 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function OrderPage({ loaderData, actionData }: Route.ComponentProps) {
-  const { plan, user } = loaderData;
+  const { plan } = loaderData;
+  const navigate = useNavigate();
+  const user = getCurrentUser();
   const [pages, setPages] = useState(10);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  if (!user) {
+    return null;
+  }
 
   // Calculate price
   const extraPages = pages > 50 ? pages - 50 : 0;
@@ -126,6 +130,8 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
           </CardHeader>
           <CardContent>
             <Form method="post" className={styles.form}>
+              {/* Hidden user ID field */}
+              <input type="hidden" name="user_id" value={user.id} />
               {/* Topic */}
               <div className={styles.field}>
                 <Label htmlFor="topic">Research Topic *</Label>
