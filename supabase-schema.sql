@@ -140,7 +140,7 @@ ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO pricing_plans (id, name, delivery_days, base_price, price_per_page)
 VALUES
-  ('express', 'Express Delivery', 3, 2000, 300),
+  ('express', 'Express Delivery', 14, 2000, 300),
   ('standard', 'Standard Delivery', 7, 1500, 200),
   ('economy', 'Economy Delivery', 14, 1000, 150)
 ON CONFLICT (id) DO NOTHING;
@@ -149,7 +149,7 @@ INSERT INTO plans (id, name, price, features, delivery_days, pages_range, popula
 VALUES
   ('1', 'Basic', 2999, '["5-10 pages", "1 revision", "7 days delivery", "Basic plagiarism check", "APA/MLA citation"]'::jsonb, 7, '5-10', false),
   ('2', 'Standard', 4999, '["10-20 pages", "2 revisions", "5 days delivery", "Advanced plagiarism check", "All citation styles", "Charts & figures"]'::jsonb, 5, '10-20', true),
-  ('3', 'Premium', 7999, '["20-30 pages", "3 revisions", "3 days delivery", "Premium plagiarism check", "All citation styles", "Charts & figures", "Abstract included", "Priority support"]'::jsonb, 3, '20-30', false),
+  ('3', 'Premium', 7999, '["20-30 pages", "3 revisions", "14 days delivery", "Premium plagiarism check", "All citation styles", "Charts & figures", "Abstract included", "Priority support"]'::jsonb, 14, '20-30', false),
   ('4', 'Custom', 0, '["30+ pages", "Unlimited revisions", "Custom delivery", "Premium plagiarism check", "All citation styles", "Charts & figures", "Abstract included", "Dedicated support"]'::jsonb, 0, '30+', false)
 ON CONFLICT (id) DO NOTHING;
 

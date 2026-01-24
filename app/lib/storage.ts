@@ -258,14 +258,14 @@ class Storage {
           features: [
             "20-30 pages",
             "3 revisions",
-            "3 days delivery",
+            "14 days delivery",
             "Premium plagiarism check",
             "All citation styles",
             "Charts & figures",
             "Abstract included",
             "Priority support",
           ],
-          deliveryDays: 3,
+          deliveryDays: 14,
           pagesRange: "20-30",
         },
         {
@@ -319,7 +319,7 @@ class Storage {
         {
           id: "express",
           name: "Express Delivery",
-          deliveryDays: 3,
+          deliveryDays: 14,
           basePrice: 2000,
           pricePerPage: 300,
         },
