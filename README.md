@@ -180,6 +180,7 @@ app/
 - **[GMAIL_SETUP_GUIDE.md](GMAIL_SETUP_GUIDE.md)** - Email setup instructions
 - **[EMAIL_LOGIN_SETUP.md](EMAIL_LOGIN_SETUP.md)** - Comprehensive email auth guide
 - **[MIGRATION_TO_EMAIL_LOGIN.md](MIGRATION_TO_EMAIL_LOGIN.md)** - Migration details
+- **[RAILWAY_SETUP.md](RAILWAY_SETUP.md)** - Railway deployment configuration
 
 ---
 
@@ -521,9 +522,9 @@ Admin Panel: http://localhost:5173/admin
 ### For Production
 
 1. Set up Gmail SMTP or SendGrid
-2. Update environment variables
+2. Update environment variables (see `RAILWAY_SETUP.md` for Railway)
 3. Build: `npm run build`
-4. Deploy to hosting (Vercel, Netlify, etc.)
+4. Deploy to hosting (Railway, Vercel, Netlify, etc.)
 
 ---
 
