@@ -64,7 +64,7 @@ Total Price = Base Price + (Number of Pages × Price per Page)
 
 | Plan | Delivery | Base Price | Per Page | Example (10 pages) |
 |------|----------|------------|----------|--------------------|
-| **Express** | 3 days | ₹2,000 | ₹300 | ₹5,000 |
+| **Express** | 14 days | ₹2,000 | ₹300 | ₹5,000 |
 | **Standard** | 7 days | ₹1,500 | ₹200 | ₹3,500 |
 | **Economy** | 14 days | ₹1,000 | ₹150 | ₹2,500 |
 
