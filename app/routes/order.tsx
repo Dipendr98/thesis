@@ -72,10 +72,9 @@ export async function action({ request }: Route.ActionArgs) {
       deadline: deadline.toISOString(),
       notes: requirements,
       plan_id: plan.id,
-      status: "Pending Payment",
+      status: "pending",
       total_price: totalPrice,
     };
-    console.log(Object.keys(orderPayload));
     const order = await createOrder(orderPayload);
 
     // Redirect to dashboard with success message
