@@ -1,5 +1,6 @@
-import { useLoaderData, useFetcher } from "react-router";
+import { useFetcher, useRevalidator } from "react-router";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card/card";
 import { Button } from "~/components/ui/button/button";
 import { Input } from "~/components/ui/input/input";
@@ -37,6 +38,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function AdminPricing({ loaderData }: Route.ComponentProps) {
   const { plan } = loaderData;
   const fetcher = useFetcher();
+  const revalidator = useRevalidator();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ basePrice: "", deliveryDays: "" });
   const [serverError, setServerError] = useState<string | null>(null);
@@ -46,11 +48,25 @@ export default function AdminPricing({ loaderData }: Route.ComponentProps) {
       if (fetcher.data.success) {
         setServerError(null);
         setIsEditing(false);
+        toast.success("Pricing plan updated successfully!");
+        // Revalidate to ensure loader data is fresh
+        revalidator.revalidate();
       } else if (fetcher.data.error) {
         setServerError(fetcher.data.error);
+        toast.error(fetcher.data.error);
       }
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, revalidator]);
+
+  // Sync edit form with plan data when plan changes (after successful update)
+  useEffect(() => {
+    if (plan && !isEditing) {
+      setEditForm({
+        basePrice: plan.base_price.toString(),
+        deliveryDays: plan.delivery_days.toString(),
+      });
+    }
+  }, [plan, isEditing]);
 
   if (!plan) {
     return (
