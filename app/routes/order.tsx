@@ -128,7 +128,7 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
     <div className={styles.container}>
       <div className={styles.headerWrapper}>
         <Button
-          variant="ghost"
+          variant="link"
           onClick={handleBack}
           className={styles.backButton}
         >
