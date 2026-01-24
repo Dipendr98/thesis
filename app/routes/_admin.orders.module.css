@@ -290,6 +290,8 @@
   border-radius: var(--radius-sm);
   color: var(--color-primary-11);
   background: var(--color-primary-3);
+  border: none;
+  cursor: pointer;
   transition: background 0.2s;
 }
 

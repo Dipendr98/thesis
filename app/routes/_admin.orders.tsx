@@ -1,5 +1,5 @@
 import { useLoaderData, Form, useActionData, useFetcher } from "react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card/card";
 import { Badge } from "~/components/ui/badge/badge";
 import { Button } from "~/components/ui/button/button";
@@ -15,7 +15,13 @@ export async function loader() {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const { updateOrderStatus, uploadOrderPaper, updateOrderDeliverables, deleteOrderDeliverable } = await import("~/lib/supabase-storage.server");
+  const {
+    updateOrderStatus,
+    uploadOrderPaper,
+    updateOrderDeliverables,
+    deleteOrderDeliverable,
+    createOrderPaperSignedUrl,
+  } = await import("~/lib/supabase-storage.server");
   const formData = await request.formData();
   const actionType = formData.get("_action") as string;
 
@@ -50,18 +56,35 @@ export async function action({ request }: Route.ActionArgs) {
         return { success: false, error: "File size exceeds 50MB limit." };
       }
 
-      const paperUrl = await uploadOrderPaper(file, orderId);
-      await updateOrderDeliverables(orderId, paperUrl, file.name);
+      const { storagePath, publicUrl } = await uploadOrderPaper(file, orderId);
+      await updateOrderDeliverables(orderId, { name: file.name, storagePath, publicUrl });
 
       return { success: true, action: "uploadPaper", message: "Paper uploaded successfully!" };
     }
 
     if (actionType === "deletePaper") {
       const orderId = formData.get("orderId") as string;
-      const paperUrl = formData.get("paperUrl") as string;
+      const paperUrl = formData.get("paperUrl") as string | null;
+      const storagePath = formData.get("storagePath") as string | null;
 
-      await deleteOrderDeliverable(orderId, paperUrl);
+      await deleteOrderDeliverable(orderId, { storagePath, url: paperUrl });
       return { success: true, action: "deletePaper", message: "Paper deleted successfully!" };
+    }
+
+    if (actionType === "downloadPaper") {
+      const storagePath = formData.get("storagePath") as string | null;
+      const paperUrl = formData.get("paperUrl") as string | null;
+
+      if (storagePath) {
+        const signedUrl = await createOrderPaperSignedUrl(storagePath);
+        return { success: true, action: "downloadPaper", signedUrl };
+      }
+
+      if (paperUrl) {
+        return { success: true, action: "downloadPaper", signedUrl: paperUrl };
+      }
+
+      return { success: false, error: "Missing file information." };
     }
 
     // Default: update status
@@ -79,7 +102,14 @@ export default function AdminOrders({ loaderData }: Route.ComponentProps) {
   const { orders } = loaderData;
   const actionData = useActionData<typeof action>();
   const fetcher = useFetcher();
+  const downloadFetcher = useFetcher<typeof action>();
   const [selectedFiles, setSelectedFiles] = useState<Record<string, File | null>>({});
+
+  useEffect(() => {
+    if (downloadFetcher.data?.success && downloadFetcher.data.signedUrl) {
+      window.open(downloadFetcher.data.signedUrl, "_blank", "noopener,noreferrer");
+    }
+  }, [downloadFetcher.data]);
 
   const handleFileSelect = (orderId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,15 +129,25 @@ export default function AdminOrders({ loaderData }: Route.ComponentProps) {
     setSelectedFiles((prev) => ({ ...prev, [orderId]: null }));
   };
 
-  const handleDeletePaper = (orderId: string, paperUrl: string) => {
+  const handleDeletePaper = (orderId: string, paperUrl: string | null, storagePath?: string | null) => {
     if (!confirm("Are you sure you want to delete this paper?")) return;
 
     const formData = new FormData();
     formData.append("_action", "deletePaper");
     formData.append("orderId", orderId);
-    formData.append("paperUrl", paperUrl);
+    if (paperUrl) formData.append("paperUrl", paperUrl);
+    if (storagePath) formData.append("storagePath", storagePath);
 
     fetcher.submit(formData, { method: "post" });
+  };
+
+  const handleDownloadPaper = (storagePath?: string | null, paperUrl?: string | null) => {
+    const formData = new FormData();
+    formData.append("_action", "downloadPaper");
+    if (storagePath) formData.append("storagePath", storagePath);
+    if (paperUrl) formData.append("paperUrl", paperUrl);
+
+    downloadFetcher.submit(formData, { method: "post" });
   };
 
   const getStatusColor = (status: string) => {
@@ -313,18 +353,17 @@ export default function AdminOrders({ loaderData }: Route.ComponentProps) {
                               </span>
                             </div>
                             <div className={styles.deliverableActions}>
-                              <a
-                                href={deliverable.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadPaper(deliverable.storage_path, deliverable.url)}
                                 className={styles.downloadLink}
                                 title="Download"
                               >
                                 <Download size={14} />
-                              </a>
+                              </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeletePaper(order.id, deliverable.url)}
+                                onClick={() => handleDeletePaper(order.id, deliverable.url, deliverable.storage_path)}
                                 className={styles.deleteButton}
                                 title="Delete"
                               >
