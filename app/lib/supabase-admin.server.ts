@@ -11,7 +11,9 @@ import { createClient } from "@supabase/supabase-js";
  */
 
 const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ??
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvZWdyaXNycnJxeWFpeGdsbGp5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA3MTM1MywiZXhwIjoyMDg0NjQ3MzUzfQ.1Cxz1UPXBEEZHexOLa9mjvZN0nJILVXU91-7XKjKk5c";
 
 // Create admin client with service role key if available
 // Falls back to anon key with a warning if service role key is not configured
