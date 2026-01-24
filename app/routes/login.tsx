@@ -122,8 +122,11 @@ export default function LoginPage() {
           // Set as current logged-in user
           storage.setCurrentUser(user);
         }
-        // Redirect to dashboard
-        window.location.href = "/dashboard";
+        // Check if there's a redirect URL stored (e.g., from order page)
+        const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
+        sessionStorage.removeItem("redirectAfterLogin");
+        // Redirect to the stored URL or dashboard
+        window.location.href = redirectUrl || "/dashboard";
       } else {
         setError(data.error || "Invalid OTP. Please try again.");
       }

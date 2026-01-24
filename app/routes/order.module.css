@@ -4,9 +4,34 @@
   padding: var(--space-6) var(--space-4);
 }
 
+.headerWrapper {
+  margin-bottom: var(--space-8);
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  color: var(--color-neutral-11);
+  font-size: var(--font-size-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-2);
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  color: var(--color-accent-11);
+  background: var(--color-accent-3);
+}
+
+.backIcon {
+  width: 16px;
+  height: 16px;
+}
+
 .header {
   text-align: center;
-  margin-bottom: var(--space-8);
 }
 
 .title {
