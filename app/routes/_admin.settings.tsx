@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useRevalidator } from "react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card/card";
 import { Button } from "~/components/ui/button/button";
 import { Input } from "~/components/ui/input/input";
@@ -81,6 +81,7 @@ export default function AdminSettingsPage({
 }: Route.ComponentProps) {
   const { qrSettings } = loaderData;
   const fetcher = useFetcher();
+  const revalidator = useRevalidator();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [supportEmail, setSupportEmail] = useState("");
@@ -92,6 +93,14 @@ export default function AdminSettingsPage({
     qrSettings?.qr_image_url || null
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Sync qrPreview with loader data when it changes (after successful upload/remove)
+  // Only sync when there's no pending file selection
+  useEffect(() => {
+    if (!selectedFile) {
+      setQrPreview(qrSettings?.qr_image_url || null);
+    }
+  }, [qrSettings?.qr_image_url, selectedFile]);
 
   useEffect(() => {
     const settings = storage.getAppSettings();
@@ -107,9 +116,13 @@ export default function AdminSettingsPage({
         if (fetcher.data.qrImageUrl) {
           setQrPreview(fetcher.data.qrImageUrl);
           toast.success("QR code uploaded successfully!");
+          // Revalidate to ensure loader data is fresh
+          revalidator.revalidate();
         } else if (fetcher.data.removed) {
           setQrPreview(null);
           toast.success("QR code removed successfully!");
+          // Revalidate to ensure loader data is fresh
+          revalidator.revalidate();
         }
         setSelectedFile(null);
         if (fileInputRef.current) {
@@ -119,7 +132,7 @@ export default function AdminSettingsPage({
         toast.error(fetcher.data.error);
       }
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, revalidator]);
 
   const handleSaveContactDetails = (e: React.FormEvent) => {
     e.preventDefault();
