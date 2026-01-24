@@ -177,7 +177,8 @@ export async function getPricingPlans(): Promise<PricingPlan[]> {
   const { data, error } = await supabase
     .from("pricing_plans")
     .select("*")
-    .order("delivery_days", { ascending: true });
+    .eq("id", "express")
+    .order("delivery_days", { ascending: false });
 
   if (error) throw error;
   return data || [];
