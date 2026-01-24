@@ -15,6 +15,15 @@ RUN npm ci
 FROM base AS builder
 WORKDIR /app
 
+# Accept build arguments for Vite environment variables
+# These are needed at build time because Vite embeds them into the client bundle
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+# Make build args available as environment variables during build
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
