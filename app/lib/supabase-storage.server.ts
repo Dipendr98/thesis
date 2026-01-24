@@ -172,6 +172,31 @@ export async function updateQRSettings(qr_image_url: string): Promise<QRSettings
   return data;
 }
 
+export async function uploadQRCodeImage(file: File): Promise<string> {
+  const fileExt = file.name.split(".").pop();
+  const fileName = `qr-code-${Date.now()}.${fileExt}`;
+  const filePath = `qr-codes/${fileName}`;
+
+  // Upload the file to Supabase Storage
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from("uploads")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload QR code: ${uploadError.message}`);
+  }
+
+  // Get the public URL
+  const { data: urlData } = supabaseAdmin.storage
+    .from("uploads")
+    .getPublicUrl(filePath);
+
+  return urlData.publicUrl;
+}
+
 // Pricing Plans
 export async function getPricingPlans(): Promise<PricingPlan[]> {
   const { data, error } = await supabase
