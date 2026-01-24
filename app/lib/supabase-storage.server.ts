@@ -202,7 +202,8 @@ export async function getPricingPlans(): Promise<PricingPlan[]> {
   const { data, error } = await supabase
     .from("pricing_plans")
     .select("*")
-    .order("delivery_days", { ascending: true });
+    .eq("id", "express")
+    .order("delivery_days", { ascending: false });
 
   if (error) throw error;
   return data || [];
@@ -336,9 +337,10 @@ export async function uploadOrderPaper(
 
   // Upload the file to Supabase Storage
   const { error: uploadError } = await supabaseAdmin.storage
-    .from("uploads")
+    .from("order-papers")
     .upload(filePath, file, {
       cacheControl: "3600",
+      contentType: file.type || "application/octet-stream",
       upsert: true,
     });
 
@@ -348,7 +350,7 @@ export async function uploadOrderPaper(
 
   // Get the public URL
   const { data: urlData } = supabaseAdmin.storage
-    .from("uploads")
+    .from("order-papers")
     .getPublicUrl(filePath);
 
   return { storagePath: filePath, publicUrl: urlData.publicUrl };

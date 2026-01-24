@@ -114,7 +114,7 @@ export default function AdminPricing({ loaderData }: Route.ComponentProps) {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Pricing Plan</h1>
-        <p className={styles.subtitle}>Manage the Standard plan pricing and delivery time</p>
+        <p className={styles.subtitle}>Manage the Express plan pricing and delivery time</p>
       </div>
 
       <div className={styles.singlePlanWrapper}>
