@@ -97,6 +97,17 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Helper function to check if current user is an admin
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM admins
+    WHERE id = auth.uid()
+  );
+END;
+$$ language 'plpgsql' SECURITY DEFINER;
+
 -- Create triggers for updated_at
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
@@ -192,17 +203,35 @@ CREATE POLICY "Anyone can view pricing plans"
   TO public
   USING (true);
 
+-- Admins can update pricing plans
+CREATE POLICY "Admins can update pricing plans"
+  ON pricing_plans FOR UPDATE
+  TO authenticated
+  USING (is_admin());
+
 -- Anyone can view plans
 CREATE POLICY "Anyone can view plans"
   ON plans FOR SELECT
   TO public
   USING (true);
 
+-- Admins can update plans
+CREATE POLICY "Admins can update plans"
+  ON plans FOR UPDATE
+  TO authenticated
+  USING (is_admin());
+
 -- Anyone can view QR settings
 CREATE POLICY "Anyone can view QR settings"
   ON qr_settings FOR SELECT
   TO public
   USING (true);
+
+-- Admins can update QR settings
+CREATE POLICY "Admins can update QR settings"
+  ON qr_settings FOR UPDATE
+  TO authenticated
+  USING (is_admin());
 
 -- Admins table policies (restrictive access)
 -- Only authenticated admins can view their own record
