@@ -315,16 +315,25 @@ export async function updateOrder(id: string, updates: Partial<Order>): Promise<
 
 // Upload order paper/deliverable
 export async function uploadOrderPaper(file: File, orderId: string): Promise<string> {
-  const fileExt = file.name.split(".").pop();
-  const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-  const fileName = `${orderId}-${Date.now()}-${sanitizedName}`;
-  const filePath = `order-papers/${fileName}`;
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .select("user_id")
+    .eq("id", orderId)
+    .single();
+
+  if (orderError || !order?.user_id) {
+    throw new Error("Failed to resolve order user.");
+  }
+
+  const fileExt = file.name.split(".").pop() || "pdf";
+  const filePath = `orders/${order.user_id}/${orderId}/paper.${fileExt}`;
 
   // Upload the file to Supabase Storage
   const { error: uploadError } = await supabaseAdmin.storage
-    .from("uploads")
+    .from("order-papers")
     .upload(filePath, file, {
       cacheControl: "3600",
+      contentType: file.type || "application/octet-stream",
       upsert: true,
     });
 
@@ -334,7 +343,7 @@ export async function uploadOrderPaper(file: File, orderId: string): Promise<str
 
   // Get the public URL
   const { data: urlData } = supabaseAdmin.storage
-    .from("uploads")
+    .from("order-papers")
     .getPublicUrl(filePath);
 
   return urlData.publicUrl;
