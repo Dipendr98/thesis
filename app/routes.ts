@@ -11,6 +11,7 @@ export default [
   route("auth/callback", "routes/auth.callback.tsx"),
   route("order", "routes/order.tsx"),
   route("dashboard", "routes/dashboard.tsx"),
+  route("auth/callback", "routes/auth.callback.tsx"),
   ...prefix("api/auth", [
     route("request-otp", "routes/api.auth.request-otp.ts"),
     route("verify-otp", "routes/api.auth.verify-otp.ts"),
