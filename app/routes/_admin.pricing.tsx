@@ -1,5 +1,5 @@
 import { useLoaderData, useFetcher } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card/card";
 import { Button } from "~/components/ui/button/button";
 import { Input } from "~/components/ui/input/input";
@@ -21,12 +21,17 @@ export async function action({ request }: Route.ActionArgs) {
   const basePrice = parseFloat(formData.get("basePrice") as string);
   const deliveryDays = parseInt(formData.get("deliveryDays") as string);
 
-  await updatePricingPlan(planId, {
-    base_price: basePrice,
-    delivery_days: deliveryDays,
-  });
+  try {
+    await updatePricingPlan(planId, {
+      base_price: basePrice,
+      delivery_days: deliveryDays,
+    });
 
-  return { success: true };
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update pricing plan:", error);
+    return { success: false, error: "Failed to update pricing plan. Please try again." };
+  }
 }
 
 export default function AdminPricing({ loaderData }: Route.ComponentProps) {
@@ -34,6 +39,18 @@ export default function AdminPricing({ loaderData }: Route.ComponentProps) {
   const fetcher = useFetcher();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ basePrice: "", deliveryDays: "" });
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (fetcher.data) {
+      if (fetcher.data.success) {
+        setServerError(null);
+        setIsEditing(false);
+      } else if (fetcher.data.error) {
+        setServerError(fetcher.data.error);
+      }
+    }
+  }, [fetcher.data]);
 
   if (!plan) {
     return (
@@ -63,13 +80,13 @@ export default function AdminPricing({ loaderData }: Route.ComponentProps) {
       return;
     }
 
+    setServerError(null);
     const formData = new FormData();
     formData.append("planId", plan.id);
     formData.append("basePrice", basePrice.toString());
     formData.append("deliveryDays", deliveryDays.toString());
 
     fetcher.submit(formData, { method: "post" });
-    setIsEditing(false);
   };
 
   const handleCancel = () => {
@@ -101,6 +118,18 @@ export default function AdminPricing({ loaderData }: Route.ComponentProps) {
           <CardContent>
             {isEditing ? (
               <div className={styles.editForm}>
+                {serverError && (
+                  <div style={{
+                    padding: "12px",
+                    marginBottom: "16px",
+                    backgroundColor: "#fee",
+                    border: "1px solid #fcc",
+                    borderRadius: "4px",
+                    color: "#c00"
+                  }}>
+                    {serverError}
+                  </div>
+                )}
                 <div className={styles.formGroup}>
                   <label>Fixed Price (₹)</label>
                   <Input
@@ -124,11 +153,11 @@ export default function AdminPricing({ loaderData }: Route.ComponentProps) {
                   <p className={styles.formHint}>Standard delivery time in days</p>
                 </div>
                 <div className={styles.actions}>
-                  <Button size="sm" onClick={handleSave}>
+                  <Button size="sm" onClick={handleSave} disabled={fetcher.state === "submitting"}>
                     <Save className={styles.icon} />
-                    Save Changes
+                    {fetcher.state === "submitting" ? "Saving..." : "Save Changes"}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleCancel}>
+                  <Button variant="outline" size="sm" onClick={handleCancel} disabled={fetcher.state === "submitting"}>
                     <X className={styles.icon} />
                     Cancel
                   </Button>

@@ -1,4 +1,4 @@
-import { useLoaderData, Form } from "react-router";
+import { useLoaderData, Form, useActionData } from "react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card/card";
 import { Badge } from "~/components/ui/badge/badge";
 import { Button } from "~/components/ui/button/button";
@@ -19,12 +19,18 @@ export async function action({ request }: Route.ActionArgs) {
   const orderId = formData.get("orderId") as string;
   const status = formData.get("status") as "pending" | "processing" | "completed" | "cancelled";
 
-  await updateOrderStatus(orderId, status);
-  return { success: true };
+  try {
+    await updateOrderStatus(orderId, status);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update order status:", error);
+    return { success: false, error: "Failed to update order status. Please try again." };
+  }
 }
 
 export default function AdminOrders({ loaderData }: Route.ComponentProps) {
   const { orders } = loaderData;
+  const actionData = useActionData<typeof action>();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -62,6 +68,19 @@ export default function AdminOrders({ loaderData }: Route.ComponentProps) {
         <h1 className={styles.title}>Orders Management</h1>
         <p className={styles.subtitle}>View and manage all customer orders</p>
       </div>
+
+      {actionData && !actionData.success && actionData.error && (
+        <div style={{
+          padding: "12px",
+          marginBottom: "16px",
+          backgroundColor: "#fee",
+          border: "1px solid #fcc",
+          borderRadius: "4px",
+          color: "#c00"
+        }}>
+          {actionData.error}
+        </div>
+      )}
 
       {orders.length === 0 ? (
         <Card>
