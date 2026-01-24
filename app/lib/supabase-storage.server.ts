@@ -1,4 +1,5 @@
 import { supabase, type PricingPlan, type Order } from "./supabase";
+import { supabaseAdmin } from "./supabase-admin.server";
 
 // Type definitions
 export interface User {
@@ -160,7 +161,8 @@ export async function getQRSettings(): Promise<QRSettings | null> {
 }
 
 export async function updateQRSettings(qr_image_url: string): Promise<QRSettings | null> {
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS for admin operations
+  const { data, error } = await supabaseAdmin
     .from("qr_settings")
     .upsert({ id: "default", qr_image_url })
     .select()
@@ -196,7 +198,8 @@ export async function updatePricingPlan(
   id: string,
   updates: Partial<Pick<PricingPlan, "base_price" | "price_per_page" | "delivery_days">>
 ): Promise<PricingPlan | null> {
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS for admin operations
+  const { data, error } = await supabaseAdmin
     .from("pricing_plans")
     .update(updates)
     .eq("id", id)
@@ -246,7 +249,8 @@ export async function updateOrderStatus(
   id: string,
   status: Order["status"]
 ): Promise<Order | null> {
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS for admin operations
+  const { data, error } = await supabaseAdmin
     .from("orders")
     .update({ status })
     .eq("id", id)
