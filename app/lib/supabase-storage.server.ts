@@ -241,7 +241,7 @@ export async function createOrder(
 ): Promise<Order> {
   const { data, error } = await supabase
     .from("orders")
-    .insert([{ ...order, status: "pending" }])
+    .insert([{ status: "pending", ...order }])
     .select()
     .single();
 
