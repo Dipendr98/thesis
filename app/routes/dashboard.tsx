@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { getCurrentUser, logoutUser } from "~/lib/auth";
 import { Button } from "~/components/ui/button/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card/card";
@@ -29,13 +29,16 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
   const { user: loadedUser, orders } = loaderData;
   const navigate = useNavigate();
+  const location = useLocation();
   const user = getCurrentUser();
 
   useEffect(() => {
     if (!user) {
+      // Store the current path so we can redirect back after login
+      sessionStorage.setItem("redirectAfterLogin", location.pathname + location.search);
       navigate("/login");
     }
-  }, [user, navigate]);
+  }, [user, navigate, location]);
 
   const handleLogout = async () => {
     await logoutUser();

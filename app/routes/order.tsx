@@ -1,4 +1,4 @@
-import { Form, useLoaderData, useActionData, redirect, useNavigate } from "react-router";
+import { Form, useLoaderData, useActionData, redirect, useNavigate, useLocation } from "react-router";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from "~/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card/card";
@@ -7,7 +7,7 @@ import { Input } from "~/components/ui/input/input";
 import { Label } from "~/components/ui/label/label";
 import { Textarea } from "~/components/ui/textarea/textarea";
 import { Alert, AlertDescription } from "~/components/ui/alert/alert";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import type { Route } from "./+types/order";
 import styles from "./order.module.css";
 
@@ -87,14 +87,22 @@ export async function action({ request }: Route.ActionArgs) {
 export default function OrderPage({ loaderData, actionData }: Route.ComponentProps) {
   const { plan } = loaderData;
   const navigate = useNavigate();
+  const location = useLocation();
   const user = getCurrentUser();
   const [pages, setPages] = useState(10);
 
   useEffect(() => {
     if (!user) {
+      // Store the current path so we can redirect back after login
+      sessionStorage.setItem("redirectAfterLogin", location.pathname + location.search);
       navigate("/login");
     }
-  }, [user, navigate]);
+  }, [user, navigate, location]);
+
+  const handleBack = () => {
+    // Navigate back to the previous page in history
+    navigate(-1);
+  };
 
   if (!user) {
     return null;
@@ -118,9 +126,19 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Place Your Order</h1>
-        <p className={styles.subtitle}>Fill in your details and requirements to get started</p>
+      <div className={styles.headerWrapper}>
+        <Button
+          variant="ghost"
+          onClick={handleBack}
+          className={styles.backButton}
+        >
+          <ArrowLeft className={styles.backIcon} />
+          Back
+        </Button>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Place Your Order</h1>
+          <p className={styles.subtitle}>Fill in your details and requirements to get started</p>
+        </div>
       </div>
 
       <div className={styles.content}>
