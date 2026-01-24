@@ -328,7 +328,10 @@ export async function uploadOrderPaper(
     throw new Error("Failed to resolve order user.");
   }
 
-  const fileExt = file.name.split(".").pop() || "pdf";
+  const dotIndex = file.name.lastIndexOf(".");
+  const fileExt = dotIndex > -1 && dotIndex < file.name.length - 1
+    ? file.name.slice(dotIndex + 1)
+    : "pdf";
   const filePath = `orders/${order.user_id}/${orderId}/paper.${fileExt}`;
 
   // Upload the file to Supabase Storage
