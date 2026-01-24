@@ -314,7 +314,10 @@ export async function updateOrder(id: string, updates: Partial<Order>): Promise<
 }
 
 // Upload order paper/deliverable
-export async function uploadOrderPaper(file: File, orderId: string): Promise<string> {
+export async function uploadOrderPaper(
+  file: File,
+  orderId: string
+): Promise<{ storagePath: string; publicUrl: string }> {
   const fileExt = file.name.split(".").pop();
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
   const fileName = `${orderId}-${Date.now()}-${sanitizedName}`;
@@ -337,14 +340,13 @@ export async function uploadOrderPaper(file: File, orderId: string): Promise<str
     .from("uploads")
     .getPublicUrl(filePath);
 
-  return urlData.publicUrl;
+  return { storagePath: filePath, publicUrl: urlData.publicUrl };
 }
 
 // Update order deliverables (uses admin client to bypass RLS)
 export async function updateOrderDeliverables(
   orderId: string,
-  paperUrl: string,
-  paperName: string
+  deliverable: { name: string; storagePath: string; publicUrl?: string }
 ): Promise<Order | null> {
   // First get the existing deliverables
   const { data: existingOrder, error: fetchError } = await supabaseAdmin
@@ -358,8 +360,9 @@ export async function updateOrderDeliverables(
   // Append to existing deliverables or create new array
   const existingDeliverables = existingOrder?.deliverables || [];
   const newDeliverable = {
-    url: paperUrl,
-    name: paperName,
+    url: deliverable.publicUrl,
+    name: deliverable.name,
+    storage_path: deliverable.storagePath,
     uploaded_at: new Date().toISOString(),
   };
 
@@ -382,7 +385,7 @@ export async function updateOrderDeliverables(
 // Delete a deliverable from an order
 export async function deleteOrderDeliverable(
   orderId: string,
-  paperUrl: string
+  deliverableIdentifier: { storagePath?: string | null; url?: string | null }
 ): Promise<Order | null> {
   // First get the existing deliverables
   const { data: existingOrder, error: fetchError } = await supabaseAdmin
@@ -397,7 +400,11 @@ export async function deleteOrderDeliverable(
 
   // Filter out the deliverable to delete
   const updatedDeliverables = Array.isArray(existingDeliverables)
-    ? existingDeliverables.filter((d: any) => d.url !== paperUrl)
+    ? existingDeliverables.filter((d: any) =>
+        deliverableIdentifier.storagePath
+          ? d.storage_path !== deliverableIdentifier.storagePath
+          : d.url !== deliverableIdentifier.url
+      )
     : [];
 
   // Update the order
@@ -410,4 +417,13 @@ export async function deleteOrderDeliverable(
 
   if (error) throw error;
   return data;
+}
+
+export async function createOrderPaperSignedUrl(storagePath: string): Promise<string> {
+  const { data, error } = await supabaseAdmin.storage
+    .from("uploads")
+    .createSignedUrl(storagePath, 60 * 10);
+
+  if (error) throw error;
+  return data.signedUrl;
 }
