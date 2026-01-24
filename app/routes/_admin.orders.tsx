@@ -1,9 +1,10 @@
-import { useLoaderData, Form, useActionData } from "react-router";
+import { useLoaderData, Form, useActionData, useFetcher } from "react-router";
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card/card";
 import { Badge } from "~/components/ui/badge/badge";
 import { Button } from "~/components/ui/button/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "~/components/ui/select/select";
-import { FileText, Clock, CheckCircle, XCircle, User, Mail, Phone, Calendar, Hash } from "lucide-react";
+import { FileText, Clock, CheckCircle, XCircle, User, Mail, Phone, Calendar, Hash, Upload, File, Trash2, Download, ExternalLink } from "lucide-react";
 import type { Route } from "./+types/_admin.orders";
 import styles from "./_admin.orders.module.css";
 
@@ -14,23 +15,100 @@ export async function loader() {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const { updateOrderStatus } = await import("~/lib/supabase-storage.server");
+  const { updateOrderStatus, uploadOrderPaper, updateOrderDeliverables, deleteOrderDeliverable } = await import("~/lib/supabase-storage.server");
   const formData = await request.formData();
-  const orderId = formData.get("orderId") as string;
-  const status = formData.get("status") as "pending" | "processing" | "completed" | "cancelled";
+  const actionType = formData.get("_action") as string;
 
   try {
+    if (actionType === "uploadPaper") {
+      const orderId = formData.get("orderId") as string;
+      const file = formData.get("paperFile") as File;
+
+      if (!file || file.size === 0) {
+        return { success: false, error: "Please select a file to upload." };
+      }
+
+      // Validate file type
+      const allowedTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain",
+        "application/zip",
+        "application/x-rar-compressed",
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        return { success: false, error: "Invalid file type. Allowed: PDF, DOC, DOCX, XLS, XLSX, TXT, ZIP, RAR" };
+      }
+
+      // Max file size: 50MB
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        return { success: false, error: "File size exceeds 50MB limit." };
+      }
+
+      const paperUrl = await uploadOrderPaper(file, orderId);
+      await updateOrderDeliverables(orderId, paperUrl, file.name);
+
+      return { success: true, action: "uploadPaper", message: "Paper uploaded successfully!" };
+    }
+
+    if (actionType === "deletePaper") {
+      const orderId = formData.get("orderId") as string;
+      const paperUrl = formData.get("paperUrl") as string;
+
+      await deleteOrderDeliverable(orderId, paperUrl);
+      return { success: true, action: "deletePaper", message: "Paper deleted successfully!" };
+    }
+
+    // Default: update status
+    const orderId = formData.get("orderId") as string;
+    const status = formData.get("status") as "pending" | "processing" | "completed" | "cancelled";
     await updateOrderStatus(orderId, status);
-    return { success: true };
+    return { success: true, action: "updateStatus" };
   } catch (error) {
-    console.error("Failed to update order status:", error);
-    return { success: false, error: "Failed to update order status. Please try again." };
+    console.error("Action failed:", error);
+    return { success: false, error: "Operation failed. Please try again." };
   }
 }
 
 export default function AdminOrders({ loaderData }: Route.ComponentProps) {
   const { orders } = loaderData;
   const actionData = useActionData<typeof action>();
+  const fetcher = useFetcher();
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, File | null>>({});
+
+  const handleFileSelect = (orderId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setSelectedFiles((prev) => ({ ...prev, [orderId]: file || null }));
+  };
+
+  const handleUpload = (orderId: string) => {
+    const file = selectedFiles[orderId];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("_action", "uploadPaper");
+    formData.append("orderId", orderId);
+    formData.append("paperFile", file);
+
+    fetcher.submit(formData, { method: "post", encType: "multipart/form-data" });
+    setSelectedFiles((prev) => ({ ...prev, [orderId]: null }));
+  };
+
+  const handleDeletePaper = (orderId: string, paperUrl: string) => {
+    if (!confirm("Are you sure you want to delete this paper?")) return;
+
+    const formData = new FormData();
+    formData.append("_action", "deletePaper");
+    formData.append("orderId", orderId);
+    formData.append("paperUrl", paperUrl);
+
+    fetcher.submit(formData, { method: "post" });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -184,6 +262,80 @@ export default function AdminOrders({ loaderData }: Route.ComponentProps) {
                       </div>
                     </div>
                   </Form>
+
+                  {/* Paper Upload Section */}
+                  <div className={styles.uploadSection}>
+                    <h4 className={styles.sectionTitle}>
+                      <Upload size={16} />
+                      Upload Paper
+                    </h4>
+                    <div className={styles.uploadControls}>
+                      <input
+                        type="file"
+                        id={`file-${order.id}`}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                        onChange={(e) => handleFileSelect(order.id, e)}
+                        className={styles.fileInput}
+                      />
+                      <label htmlFor={`file-${order.id}`} className={styles.fileLabel}>
+                        <File size={16} />
+                        {selectedFiles[order.id]?.name || "Choose file..."}
+                      </label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleUpload(order.id)}
+                        disabled={!selectedFiles[order.id] || fetcher.state !== "idle"}
+                      >
+                        {fetcher.state !== "idle" ? "Uploading..." : "Upload"}
+                      </Button>
+                    </div>
+                    <p className={styles.uploadHint}>
+                      Allowed: PDF, DOC, DOCX, XLS, XLSX, TXT, ZIP, RAR (max 50MB)
+                    </p>
+                  </div>
+
+                  {/* Uploaded Deliverables */}
+                  {order.deliverables && Array.isArray(order.deliverables) && order.deliverables.length > 0 && (
+                    <div className={styles.deliverablesSection}>
+                      <h4 className={styles.sectionTitle}>
+                        <FileText size={16} />
+                        Uploaded Papers ({order.deliverables.length})
+                      </h4>
+                      <ul className={styles.deliverablesList}>
+                        {order.deliverables.map((deliverable: any, idx: number) => (
+                          <li key={idx} className={styles.deliverableItem}>
+                            <div className={styles.deliverableInfo}>
+                              <File size={14} />
+                              <span className={styles.deliverableName}>{deliverable.name}</span>
+                              <span className={styles.deliverableDate}>
+                                {new Date(deliverable.uploaded_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className={styles.deliverableActions}>
+                              <a
+                                href={deliverable.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.downloadLink}
+                                title="Download"
+                              >
+                                <Download size={14} />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePaper(order.id, deliverable.url)}
+                                className={styles.deleteButton}
+                                title="Delete"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

@@ -312,3 +312,102 @@ export async function updateOrder(id: string, updates: Partial<Order>): Promise<
   if (error) throw error;
   return data;
 }
+
+// Upload order paper/deliverable
+export async function uploadOrderPaper(file: File, orderId: string): Promise<string> {
+  const fileExt = file.name.split(".").pop();
+  const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+  const fileName = `${orderId}-${Date.now()}-${sanitizedName}`;
+  const filePath = `order-papers/${fileName}`;
+
+  // Upload the file to Supabase Storage
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from("uploads")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload order paper: ${uploadError.message}`);
+  }
+
+  // Get the public URL
+  const { data: urlData } = supabaseAdmin.storage
+    .from("uploads")
+    .getPublicUrl(filePath);
+
+  return urlData.publicUrl;
+}
+
+// Update order deliverables (uses admin client to bypass RLS)
+export async function updateOrderDeliverables(
+  orderId: string,
+  paperUrl: string,
+  paperName: string
+): Promise<Order | null> {
+  // First get the existing deliverables
+  const { data: existingOrder, error: fetchError } = await supabaseAdmin
+    .from("orders")
+    .select("deliverables")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  // Append to existing deliverables or create new array
+  const existingDeliverables = existingOrder?.deliverables || [];
+  const newDeliverable = {
+    url: paperUrl,
+    name: paperName,
+    uploaded_at: new Date().toISOString(),
+  };
+
+  const updatedDeliverables = Array.isArray(existingDeliverables)
+    ? [...existingDeliverables, newDeliverable]
+    : [newDeliverable];
+
+  // Update the order with new deliverables
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .update({ deliverables: updatedDeliverables })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Delete a deliverable from an order
+export async function deleteOrderDeliverable(
+  orderId: string,
+  paperUrl: string
+): Promise<Order | null> {
+  // First get the existing deliverables
+  const { data: existingOrder, error: fetchError } = await supabaseAdmin
+    .from("orders")
+    .select("deliverables")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  const existingDeliverables = existingOrder?.deliverables || [];
+
+  // Filter out the deliverable to delete
+  const updatedDeliverables = Array.isArray(existingDeliverables)
+    ? existingDeliverables.filter((d: any) => d.url !== paperUrl)
+    : [];
+
+  // Update the order
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .update({ deliverables: updatedDeliverables })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
