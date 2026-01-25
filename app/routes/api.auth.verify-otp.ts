@@ -47,7 +47,7 @@ export async function action({ request }: Route.ActionArgs) {
     let user = storage.getUserByEmail(email);
     if (!user) {
       user = {
-        id: `user-${Date.now()}`,
+        id: crypto.randomUUID(),
         email,
         createdAt: new Date().toISOString(),
       };
