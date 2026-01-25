@@ -1,5 +1,6 @@
 import { supabase, type PricingPlan, type Order } from "./supabase";
 import { supabaseAdmin } from "./supabase-admin.server";
+import { getSupabaseServerClient } from "./supabase.server";
 
 // Type definitions
 export interface User {
@@ -237,10 +238,29 @@ export async function updatePricingPlan(
 
 // Orders
 export async function createOrder(
-  order: Omit<Order, "id" | "created_at" | "updated_at" | "status">
+  request: Request,
+  order: Omit<Order, "id" | "created_at" | "updated_at" | "status" | "user_id">
 ): Promise<Order> {
-  const payload = { ...order, status: "pending" };
-  const { data, error } = await supabaseAdmin
+  const { supabase: authClient } = getSupabaseServerClient(request);
+
+  // Verify the user is authenticated
+  const {
+    data: { user },
+    error: authError,
+  } = await authClient.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("You must be logged in to create an order");
+  }
+
+  // Include the user_id in the payload so RLS policy passes
+  const payload = {
+    ...order,
+    user_id: user.id,
+    status: "pending" as const,
+  };
+
+  const { data, error } = await authClient
     .from("orders")
     .insert(payload)
     .select("*")
