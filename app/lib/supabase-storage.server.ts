@@ -238,9 +238,9 @@ export async function updatePricingPlan(
 
 // Orders
 export async function createOrder(
-  order: Omit<Order, "id" | "created_at" | "updated_at">
+  order: Omit<Order, "id" | "created_at" | "updated_at" | "status">
 ): Promise<Order> {
-  const payload = { status: "pending", ...order };
+  const payload = { ...order, status: "pending" };
   const { data, error } = await supabaseAdmin
     .from("orders")
     .insert(payload)
