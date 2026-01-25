@@ -74,6 +74,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 
+
 export default function OrderPage({ loaderData, actionData }: Route.ComponentProps) {
   const { plan, error: pricingError } = loaderData;
   const navigate = useNavigate();
