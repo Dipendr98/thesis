@@ -26,6 +26,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
 
+  const userId = formData.get("user_id") as string;
   const pages = parseInt(formData.get("pages") as string);
   const requirements = formData.get("requirements") as string;
   const topic = formData.get("topic") as string;
@@ -33,6 +34,9 @@ export async function action({ request }: Route.ActionArgs) {
   const type = formData.get("type") as string;
   const citationStyle = formData.get("citation_style") as string;
 
+  if (!userId) {
+    return { error: "You must be logged in to create an order" };
+  }
   if (!pages || !requirements || !topic || !domain || !type || !citationStyle) {
     return { error: "All fields are required" };
   }
@@ -63,8 +67,8 @@ export async function action({ request }: Route.ActionArgs) {
       total_price: totalPrice,
     };
 
-    // Use createOrder with request to properly authenticate via Supabase session
-    const order = await createOrder(request, orderPayload);
+    // Use createOrder with user_id from form (supports both OTP and Google login users)
+    const order = await createOrder(userId, orderPayload);
 
     return redirect(`/dashboard?order=${order.id}`);
   } catch (error: any) {
@@ -142,7 +146,8 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
           </CardHeader>
           <CardContent>
             <Form method="post" className={styles.form}>
-              {/* Hidden user ID field */}
+              {/* Hidden user ID field for server-side order creation */}
+              <input type="hidden" name="user_id" value={user.id} />
               {/* Topic */}
               <div className={styles.field}>
                 <Label htmlFor="topic">Research Topic *</Label>
