@@ -61,7 +61,6 @@ export async function action({ request }: Route.ActionArgs) {
       deadline: deadline.toISOString(),
       notes: requirements,
       plan_id: plan.id,
-      status: "pending",
       total_price: totalPrice,
     };
 
