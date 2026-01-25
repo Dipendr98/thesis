@@ -158,7 +158,6 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
           <CardContent>
             <Form method="post" className={styles.form}>
               {/* Hidden user ID field */}
-              <input type="hidden" name="user_id" value={user.id} />
               {/* Topic */}
               <div className={styles.field}>
                 <Label htmlFor="topic">Research Topic *</Label>
