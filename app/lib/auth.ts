@@ -47,7 +47,7 @@ export const verifyOTP = (mobile: string, otp: string, sentOtp: string): User | 
   let user = storage.getUserByMobile(mobile);
   if (!user) {
     user = {
-      id: `user-${Date.now()}`,
+      id: crypto.randomUUID(),
       email: `${mobile}@legacy.local`,
       mobile,
       createdAt: new Date().toISOString(),
