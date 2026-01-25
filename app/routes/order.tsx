@@ -39,7 +39,8 @@ export async function action({ request }: Route.ActionArgs) {
   if (pages < 1) return { error: "Pages must be at least 1" };
 
   try {
-    const { createOrder, getPricingPlans } = await import("~/lib/supabase-storage.server");
+    const { getPricingPlans } = await import("~/lib/supabase-storage.server");
+    const { supabase } = await import("~/lib/supabase");
 
     const plans = await getPricingPlans();
     const plan = plans[0];
@@ -51,8 +52,7 @@ export async function action({ request }: Route.ActionArgs) {
     const deadline = new Date();
     deadline.setDate(deadline.getDate() + plan.delivery_days);
 
-    const orderPayload = {
-      // ✅ DO NOT send user_id
+    const payload = {
       topic,
       domain,
       type,
@@ -65,8 +65,18 @@ export async function action({ request }: Route.ActionArgs) {
       total_price: totalPrice,
     };
 
-    const order = await createOrder(orderPayload);
-    return redirect(`/dashboard?order=${order.id}`);
+    const { data, error } = await supabase
+      .from("orders")
+      .insert(payload)
+      .select("*")
+      .single();
+
+    console.log("ORDER PAYLOAD:", payload);
+    console.log("ORDER ERROR:", error);
+
+    if (error) throw new Error(error.message);
+
+    return redirect(`/dashboard?order=${data.id}`);
   } catch (error: any) {
     console.error("Order creation error:", error);
     return { error: error?.message ?? "Failed to create order. Please try again." };
