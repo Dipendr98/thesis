@@ -240,13 +240,17 @@ export async function updatePricingPlan(
 export async function createOrder(
   order: Omit<Order, "id" | "created_at" | "updated_at">
 ): Promise<Order> {
+  const payload = { status: "pending", ...order };
   const { data, error } = await supabaseAdmin
     .from("orders")
-    .insert([{ status: "pending", ...order }])
-    .select()
+    .insert(payload)
+    .select("*")
     .single();
 
-  if (error) throw error;
+  console.log("ORDER PAYLOAD:", payload);
+  console.log("ORDER ERROR:", error);
+
+  if (error) throw new Error(error.message);
   return data;
 }
 
