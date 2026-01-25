@@ -12,10 +12,15 @@ import type { Route } from "./+types/order";
 import styles from "./order.module.css";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { getPricingPlans } = await import("~/lib/supabase-storage.server");
-  const plans = await getPricingPlans();
-  const plan = plans[0]; // Only one plan now
-  return { plan };
+  try {
+    const { getPricingPlans } = await import("~/lib/supabase-storage.server");
+    const plans = await getPricingPlans();
+    const plan = plans[0] ?? null; // Only one plan now
+    return { plan, error: null };
+  } catch (error) {
+    console.error("Error loading pricing plan:", error);
+    return { plan: null, error: "Pricing is temporarily unavailable. Please try again later." };
+  }
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -86,7 +91,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function OrderPage({ loaderData, actionData }: Route.ComponentProps) {
-  const { plan } = loaderData;
+  const { plan, error: pricingError } = loaderData;
   const navigate = useNavigate();
   const location = useLocation();
   const user = getCurrentUser();
@@ -109,21 +114,23 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
     return null;
   }
 
-  // Calculate price
-  const extraPages = pages > 50 ? pages - 50 : 0;
-  const extraPagesCost = extraPages * 50;
-  const totalPrice = plan.base_price + extraPagesCost;
-
   if (!plan) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>Place Your Order</h1>
-          <p className={styles.subtitle}>No pricing plan available at the moment</p>
+          <p className={styles.subtitle}>
+            {pricingError ?? "No pricing plan available at the moment"}
+          </p>
         </div>
       </div>
     );
   }
+
+  // Calculate price
+  const extraPages = pages > 50 ? pages - 50 : 0;
+  const extraPagesCost = extraPages * 50;
+  const totalPrice = plan.base_price + extraPagesCost;
 
   return (
     <div className={styles.container}>
