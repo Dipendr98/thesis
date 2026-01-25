@@ -25,7 +25,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
-  const userId = formData.get("user_id") as string;
+
   const pages = parseInt(formData.get("pages") as string);
   const requirements = formData.get("requirements") as string;
   const topic = formData.get("topic") as string;
@@ -33,42 +33,26 @@ export async function action({ request }: Route.ActionArgs) {
   const type = formData.get("type") as string;
   const citationStyle = formData.get("citation_style") as string;
 
-  // Validation
-  if (!userId) {
-    return redirect("/login");
-  }
-
   if (!pages || !requirements || !topic || !domain || !type || !citationStyle) {
     return { error: "All fields are required" };
   }
-
-  if (pages < 1) {
-    return { error: "Pages must be at least 1" };
-  }
+  if (pages < 1) return { error: "Pages must be at least 1" };
 
   try {
     const { createOrder, getPricingPlans } = await import("~/lib/supabase-storage.server");
 
-    // Get plan details
     const plans = await getPricingPlans();
     const plan = plans[0];
+    if (!plan) return { error: "No pricing plan available" };
 
-    if (!plan) {
-      return { error: "No pricing plan available" };
-    }
-
-    // Calculate price: ₹2000 for up to 50 pages, ₹50 per extra page
     const extraPages = pages > 50 ? pages - 50 : 0;
-    const extraPagesCost = extraPages * 50;
-    const totalPrice = plan.base_price + extraPagesCost;
+    const totalPrice = plan.base_price + extraPages * 50;
 
-    // Calculate deadline based on delivery days
     const deadline = new Date();
     deadline.setDate(deadline.getDate() + plan.delivery_days);
 
-    // Create order with user_id
     const orderPayload = {
-      user_id: userId,
+      // ✅ DO NOT send user_id
       topic,
       domain,
       type,
@@ -80,13 +64,12 @@ export async function action({ request }: Route.ActionArgs) {
       status: "pending",
       total_price: totalPrice,
     };
-    const order = await createOrder(orderPayload);
 
-    // Redirect to dashboard with success message
+    const order = await createOrder(orderPayload);
     return redirect(`/dashboard?order=${order.id}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Order creation error:", error);
-    return { error: "Failed to create order. Please try again." };
+    return { error: error?.message ?? "Failed to create order. Please try again." };
   }
 }
 
