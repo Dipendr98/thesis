@@ -1,4 +1,5 @@
 import { supabase, type PricingPlan, type Order } from "./supabase";
+import { supabaseAdmin } from "./supabase-admin.server";
 
 // Type definitions
 export interface User {
@@ -160,7 +161,8 @@ export async function getQRSettings(): Promise<QRSettings | null> {
 }
 
 export async function updateQRSettings(qr_image_url: string): Promise<QRSettings | null> {
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS for admin operations
+  const { data, error } = await supabaseAdmin
     .from("qr_settings")
     .upsert({ id: "default", qr_image_url })
     .select()
@@ -170,12 +172,37 @@ export async function updateQRSettings(qr_image_url: string): Promise<QRSettings
   return data;
 }
 
+export async function uploadQRCodeImage(file: File): Promise<string> {
+  const fileExt = file.name.split(".").pop();
+  const fileName = `qr-code-${Date.now()}.${fileExt}`;
+  const filePath = `qr-codes/${fileName}`;
+
+  // Upload the file to Supabase Storage
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from("uploads")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload QR code: ${uploadError.message}`);
+  }
+
+  // Get the public URL
+  const { data: urlData } = supabaseAdmin.storage
+    .from("uploads")
+    .getPublicUrl(filePath);
+
+  return urlData.publicUrl;
+}
+
 // Pricing Plans
 export async function getPricingPlans(): Promise<PricingPlan[]> {
   const { data, error } = await supabase
     .from("pricing_plans")
     .select("*")
-    .order("delivery_days", { ascending: true });
+    .order("delivery_days", { ascending: false });
 
   if (error) throw error;
   return data || [];
@@ -196,7 +223,8 @@ export async function updatePricingPlan(
   id: string,
   updates: Partial<Pick<PricingPlan, "base_price" | "price_per_page" | "delivery_days">>
 ): Promise<PricingPlan | null> {
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS for admin operations
+  const { data, error } = await supabaseAdmin
     .from("pricing_plans")
     .update(updates)
     .eq("id", id)
@@ -209,15 +237,19 @@ export async function updatePricingPlan(
 
 // Orders
 export async function createOrder(
-  order: Omit<Order, "id" | "created_at" | "updated_at">
+  order: Omit<Order, "id" | "created_at" | "updated_at" | "status">
 ): Promise<Order> {
-  const { data, error } = await supabase
+  const payload = { ...order, status: "pending" };
+  const { data, error } = await supabaseAdmin
     .from("orders")
-    .insert([{ ...order, status: "pending" }])
-    .select()
+    .insert(payload)
+    .select("*")
     .single();
 
-  if (error) throw error;
+  console.log("ORDER PAYLOAD:", payload);
+  console.log("ORDER ERROR:", error);
+
+  if (error) throw new Error(error.message);
   return data;
 }
 
@@ -246,7 +278,8 @@ export async function updateOrderStatus(
   id: string,
   status: Order["status"]
 ): Promise<Order | null> {
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS for admin operations
+  const { data, error } = await supabaseAdmin
     .from("orders")
     .update({ status })
     .eq("id", id)
@@ -282,4 +315,131 @@ export async function updateOrder(id: string, updates: Partial<Order>): Promise<
 
   if (error) throw error;
   return data;
+}
+
+// Upload order paper/deliverable
+export async function uploadOrderPaper(
+  file: File,
+  orderId: string
+): Promise<{ storagePath: string; publicUrl: string }> {
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .select("user_id")
+    .eq("id", orderId)
+    .single();
+
+  if (orderError || !order?.user_id) {
+    throw new Error("Failed to resolve order user.");
+  }
+
+  const dotIndex = file.name.lastIndexOf(".");
+  const fileExt = dotIndex > -1 && dotIndex < file.name.length - 1
+    ? file.name.slice(dotIndex + 1)
+    : "pdf";
+  const filePath = `orders/${order.user_id}/${orderId}/paper.${fileExt}`;
+
+  // Upload the file to Supabase Storage
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from("order-papers")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      contentType: file.type || "application/octet-stream",
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload order paper: ${uploadError.message}`);
+  }
+
+  // Get the public URL
+  const { data: urlData } = supabaseAdmin.storage
+    .from("order-papers")
+    .getPublicUrl(filePath);
+
+  return { storagePath: filePath, publicUrl: urlData.publicUrl };
+}
+
+// Update order deliverables (uses admin client to bypass RLS)
+export async function updateOrderDeliverables(
+  orderId: string,
+  deliverable: { name: string; storagePath: string; publicUrl?: string }
+): Promise<Order | null> {
+  // First get the existing deliverables
+  const { data: existingOrder, error: fetchError } = await supabaseAdmin
+    .from("orders")
+    .select("deliverables")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  // Append to existing deliverables or create new array
+  const existingDeliverables = existingOrder?.deliverables || [];
+  const newDeliverable = {
+    url: deliverable.publicUrl,
+    name: deliverable.name,
+    storage_path: deliverable.storagePath,
+    uploaded_at: new Date().toISOString(),
+  };
+
+  const updatedDeliverables = Array.isArray(existingDeliverables)
+    ? [...existingDeliverables, newDeliverable]
+    : [newDeliverable];
+
+  // Update the order with new deliverables
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .update({ deliverables: updatedDeliverables })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Delete a deliverable from an order
+export async function deleteOrderDeliverable(
+  orderId: string,
+  deliverableIdentifier: { storagePath?: string | null; url?: string | null }
+): Promise<Order | null> {
+  // First get the existing deliverables
+  const { data: existingOrder, error: fetchError } = await supabaseAdmin
+    .from("orders")
+    .select("deliverables")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  const existingDeliverables = existingOrder?.deliverables || [];
+
+  // Filter out the deliverable to delete
+  const updatedDeliverables = Array.isArray(existingDeliverables)
+    ? existingDeliverables.filter((d: any) =>
+        deliverableIdentifier.storagePath
+          ? d.storage_path !== deliverableIdentifier.storagePath
+          : d.url !== deliverableIdentifier.url
+      )
+    : [];
+
+  // Update the order
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .update({ deliverables: updatedDeliverables })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createOrderPaperSignedUrl(storagePath: string): Promise<string> {
+  const { data, error } = await supabaseAdmin.storage
+    .from("uploads")
+    .createSignedUrl(storagePath, 60 * 10);
+
+  if (error) throw error;
+  return data.signedUrl;
 }

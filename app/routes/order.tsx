@@ -1,38 +1,31 @@
-import { Form, useLoaderData, useActionData, redirect } from "react-router";
-import { useState } from "react";
+import { Form, useLoaderData, useActionData, redirect, useNavigate, useLocation } from "react-router";
+import { useState, useEffect } from "react";
+import { getCurrentUser } from "~/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card/card";
 import { Button } from "~/components/ui/button/button";
 import { Input } from "~/components/ui/input/input";
 import { Label } from "~/components/ui/label/label";
 import { Textarea } from "~/components/ui/textarea/textarea";
 import { Alert, AlertDescription } from "~/components/ui/alert/alert";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import type { Route } from "./+types/order";
 import styles from "./order.module.css";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { getCurrentUser } = await import("~/lib/auth");
-  const user = getCurrentUser();
-
-  if (!user) {
-    throw redirect("/login");
+  try {
+    const { getPricingPlans } = await import("~/lib/supabase-storage.server");
+    const plans = await getPricingPlans();
+    const plan = plans[0] ?? null; // Only one plan now
+    return { plan, error: null };
+  } catch (error) {
+    console.error("Error loading pricing plan:", error);
+    return { plan: null, error: "Pricing is temporarily unavailable. Please try again later." };
   }
-
-  const { getPricingPlans } = await import("~/lib/supabase-storage.server");
-  const plans = await getPricingPlans();
-  const plan = plans[0]; // Only one plan now
-  return { plan, user };
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const { getCurrentUser } = await import("~/lib/auth");
-  const user = getCurrentUser();
-
-  if (!user) {
-    return redirect("/login");
-  }
-
   const formData = await request.formData();
+
   const pages = parseInt(formData.get("pages") as string);
   const requirements = formData.get("requirements") as string;
   const topic = formData.get("topic") as string;
@@ -40,38 +33,26 @@ export async function action({ request }: Route.ActionArgs) {
   const type = formData.get("type") as string;
   const citationStyle = formData.get("citation_style") as string;
 
-  // Validation
   if (!pages || !requirements || !topic || !domain || !type || !citationStyle) {
     return { error: "All fields are required" };
   }
-
-  if (pages < 1) {
-    return { error: "Pages must be at least 1" };
-  }
+  if (pages < 1) return { error: "Pages must be at least 1" };
 
   try {
     const { createOrder, getPricingPlans } = await import("~/lib/supabase-storage.server");
 
-    // Get plan details
     const plans = await getPricingPlans();
     const plan = plans[0];
+    if (!plan) return { error: "No pricing plan available" };
 
-    if (!plan) {
-      return { error: "No pricing plan available" };
-    }
-
-    // Calculate price: ₹2000 for up to 50 pages, ₹50 per extra page
     const extraPages = pages > 50 ? pages - 50 : 0;
-    const extraPagesCost = extraPages * 50;
-    const totalPrice = plan.base_price + extraPagesCost;
+    const totalPrice = plan.base_price + extraPages * 50;
 
-    // Calculate deadline based on delivery days
     const deadline = new Date();
     deadline.setDate(deadline.getDate() + plan.delivery_days);
 
-    // Create order with user_id
-    const order = await createOrder({
-      user_id: user.id,
+    const orderPayload = {
+      // ✅ DO NOT send user_id
       topic,
       domain,
       type,
@@ -80,43 +61,76 @@ export async function action({ request }: Route.ActionArgs) {
       deadline: deadline.toISOString(),
       notes: requirements,
       plan_id: plan.id,
-      status: "Pending Payment",
+      status: "pending",
       total_price: totalPrice,
-    });
+    };
 
-    // Redirect to dashboard with success message
+    const order = await createOrder(orderPayload);
     return redirect(`/dashboard?order=${order.id}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Order creation error:", error);
-    return { error: "Failed to create order. Please try again." };
+    return { error: error?.message ?? "Failed to create order. Please try again." };
   }
 }
 
 export default function OrderPage({ loaderData, actionData }: Route.ComponentProps) {
-  const { plan, user } = loaderData;
+  const { plan, error: pricingError } = loaderData;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const user = getCurrentUser();
   const [pages, setPages] = useState(10);
 
-  // Calculate price
-  const extraPages = pages > 50 ? pages - 50 : 0;
-  const extraPagesCost = extraPages * 50;
-  const totalPrice = plan.base_price + extraPagesCost;
+  useEffect(() => {
+    if (!user) {
+      // Store the current path so we can redirect back after login
+      sessionStorage.setItem("redirectAfterLogin", location.pathname + location.search);
+      navigate("/login");
+    }
+  }, [user, navigate, location]);
+
+  const handleBack = () => {
+    // Navigate back to the previous page in history
+    navigate(-1);
+  };
+
+  if (!user) {
+    return null;
+  }
 
   if (!plan) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>Place Your Order</h1>
-          <p className={styles.subtitle}>No pricing plan available at the moment</p>
+          <p className={styles.subtitle}>
+            {pricingError ?? "No pricing plan available at the moment"}
+          </p>
         </div>
       </div>
     );
   }
 
+  // Calculate price
+  const hasPages = pages >= 1;
+  const extraPages = pages > 50 ? pages - 50 : 0;
+  const extraPagesCost = extraPages * 50;
+  const totalPrice = hasPages ? plan.base_price + extraPagesCost : 0;
+
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Place Your Order</h1>
-        <p className={styles.subtitle}>Fill in your details and requirements to get started</p>
+      <div className={styles.headerWrapper}>
+        <Button
+          variant="link"
+          onClick={handleBack}
+          className={styles.backButton}
+        >
+          <ArrowLeft className={styles.backIcon} />
+          Back
+        </Button>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Place Your Order</h1>
+          <p className={styles.subtitle}>Fill in your details and requirements to get started</p>
+        </div>
       </div>
 
       <div className={styles.content}>
@@ -126,6 +140,7 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
           </CardHeader>
           <CardContent>
             <Form method="post" className={styles.form}>
+              {/* Hidden user ID field */}
               {/* Topic */}
               <div className={styles.field}>
                 <Label htmlFor="topic">Research Topic *</Label>

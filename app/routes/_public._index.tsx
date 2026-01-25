@@ -116,7 +116,7 @@ export default function HomePage() {
               <AccordionTrigger>How long does it take to complete a research paper?</AccordionTrigger>
               <AccordionContent>
                 Delivery time depends on your chosen plan and deadline. Our Basic plan delivers in 7 days, Standard in 5
-                days, and Premium in 3 days. Custom plans have flexible timelines based on your requirements.
+                days, and Premium in 14 days. Custom plans have flexible timelines based on your requirements.
               </AccordionContent>
             </AccordionItem>
 

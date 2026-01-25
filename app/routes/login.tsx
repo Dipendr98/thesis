@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button/button";
 import { Alert, AlertDescription } from "~/components/ui/alert/alert";
 import { Input } from "~/components/ui/input/input";
 import { getCurrentUser } from "~/lib/auth";
+import { storage } from "~/lib/storage";
 import { APP_CONFIG } from "~/config";
 import { supabase, isConfigured } from "~/lib/supabase.client";
 import styles from "./login.module.css";
@@ -110,8 +111,23 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Reload to update session
-        window.location.href = "/dashboard";
+        // Save user to localStorage on client-side (server can't access localStorage)
+        if (data.user) {
+          const user = {
+            id: data.user.id,
+            email: data.user.email,
+            createdAt: new Date().toISOString(),
+          };
+          // Save user to users list (for future lookups)
+          storage.saveUser(user);
+          // Set as current logged-in user
+          storage.setCurrentUser(user);
+        }
+        // Check if there's a redirect URL stored (e.g., from order page)
+        const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
+        sessionStorage.removeItem("redirectAfterLogin");
+        // Redirect to the stored URL or dashboard
+        window.location.href = redirectUrl || "/dashboard";
       } else {
         setError(data.error || "Invalid OTP. Please try again.");
       }
@@ -145,7 +161,7 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: "https://thesistrack.up.railway.app/auth/callback"
         },
       });
 

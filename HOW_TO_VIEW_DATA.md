@@ -89,7 +89,7 @@ Once logged in, you have access to **4 main sections** via the left sidebar:
 
 **What You See:**
 - Three pricing tiers:
-  - **Express Delivery** (3 days)
+  - **Express Delivery** (14 days)
   - **Standard Delivery** (7 days)
   - **Economy Delivery** (14 days)
 

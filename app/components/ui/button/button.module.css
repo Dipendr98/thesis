@@ -73,6 +73,15 @@
   background: color-mix(in srgb, var(--color-accent-4) 80%, transparent);
 }
 
+.ghost {
+  background: transparent;
+  color: var(--color-accent-11);
+}
+
+.ghost:hover {
+  background: var(--color-accent-3);
+}
+
 .link {
   background: transparent;
   color: var(--color-accent-11);
