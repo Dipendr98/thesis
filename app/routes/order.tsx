@@ -128,9 +128,10 @@ export default function OrderPage({ loaderData, actionData }: Route.ComponentPro
   }
 
   // Calculate price
+  const hasPages = pages >= 1;
   const extraPages = pages > 50 ? pages - 50 : 0;
   const extraPagesCost = extraPages * 50;
-  const totalPrice = plan.base_price + extraPagesCost;
+  const totalPrice = hasPages ? plan.base_price + extraPagesCost : 0;
 
   return (
     <div className={styles.container}>
