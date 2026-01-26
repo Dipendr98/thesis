@@ -3,7 +3,7 @@ import classNames from "classnames";
 import styles from "./alert.module.css";
 
 interface AlertProps extends React.ComponentProps<"div"> {
-  variant?: "default" | "destructive";
+  variant?: "default" | "destructive" | "warning";
 }
 
 const Alert: React.FC<AlertProps> = ({ className, variant = "default", ...props }) => (

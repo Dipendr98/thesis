@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
-import { FileText, Mail } from "lucide-react";
+import { AlertTriangle, FileText, Mail } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card/card";
 import { Button } from "~/components/ui/button/button";
+import { Alert, AlertDescription } from "~/components/ui/alert/alert";
 import { Input } from "~/components/ui/input/input";
 import { getCurrentUser } from "~/lib/auth";
 import { storage } from "~/lib/storage";
@@ -228,9 +229,10 @@ export default function LoginPage() {
               </div>
 
               {!isConfigured && (
-                <div className={styles.supabaseWarning}>
-                  ⚠️ Supabase not configured in this environment
-                </div>
+                <Alert variant="warning" className={styles.supabaseWarning}>
+                  <AlertTriangle className={styles.warningIcon} />
+                  <AlertDescription>Supabase not configured in this environment</AlertDescription>
+                </Alert>
               )}
 
               <Button
